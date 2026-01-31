@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CashGuard TR | Risk Testi</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="brand">CashGuard TR</div>
+      <a class="btn secondary" href="/">Ana Sayfa</a>
+    </div>
+
+    <div class="card">
+      <h2>Risk Testi (Savunma Sanayi KOBİ)</h2>
+      <p><strong>cashguardtr.com</strong> — Bankaya gitmeden önce kırmızı/sarı/yeşil görün.</p>
+
+      <form action="/result" method="post">
+        <div class="grid">
+
+          <div class="field">
+            <label>1) Ortalama tahsilat (gün)</label>
+            <input type="number" name="collection_days" min="0" required>
+          </div>
+
+          <div class="field">
+            <label>2) Ortalama ödeme (gün)</label>
+            <input type="number" name="payable_days" min="0" required>
+          </div>
+
+          <div class="field">
+            <label>3) Döviz borcu / toplam borç (%)</label>
+            <input type="number" name="fx_debt_ratio" min="0" max="100" required>
+          </div>
+
+          <div class="field">
+            <label>4) Döviz gelir / toplam gelir (%)</label>
+            <input type="number" name="fx_revenue_ratio" min="0" max="100" required>
+          </div>
+
+          <div class="field">
+           <div class="label-row">
+  <label>5) Nakit tamponu (ay)</label>
+
+  <span class="info">i
+    <span class="tip">
+      <div><strong>Tanım:</strong> Mevcut nakit ile kaç ay dayanırsın?</div>
+      <div style="margin-top:6px;"><strong>Formül:</strong></div>
+      <div style="margin-top:4px;">
+        Nakit tamponu (ay) = (Kasa + Banka) / Aylık ort. nakit çıkışı
+      </div>
+      <div style="margin-top:6px; opacity:.9;">
+        Örn: 9m TL nakit / 3m TL aylık çıkış = 3 ay
+      </div>
+    </span>
+  </span>
+</div>
+
+            <input type="number" name="cash_buffer_months" min="0" required>
+          </div>
+
+          <div class="field">
+            <label>6) En büyük müşteri payı (%)</label>
+            <input type="number" name="top_customer_share" min="0" max="100" required>
+          </div>
+
+          <div class="field">
+            <label>7) Son 12 ay gecikme yaşandı mı?</label>
+            <select name="delay_issue" required>
+              <option value="no">Hayır</option>
+              <option value="yes">Evet</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>8) 12 ay içinde vadesi dolacak borç (%)</label>
+            <input type="number" name="short_debt_ratio" min="0" max="100" required>
+          </div>
+
+          <div class="field">
+            <label>9) Limit daralması / teminat baskısı?</label>
+            <select name="limit_pressure" required>
+              <option value="no">Hayır</option>
+              <option value="yes">Evet</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>10) Kur riski yönetimi</label>
+            <select name="hedging" required>
+              <option value="none">Yok</option>
+              <option value="basic">Kısmi</option>
+              <option value="strong">Var</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="actions">
+          <button class="btn" type="submit">Sonucu Gör</button>
+          <a class="btn secondary" href="/">Vazgeç</a>
+        </div>
+
+        <p class="small">Not: Bu test hızlı ön taramadır. Detaylı çalışma için cashguardtr.com üzerinden iletişime geçebilirsin.</p>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

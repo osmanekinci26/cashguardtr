@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>CashGuard TR | Sonuç</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="brand">CashGuard TR</div>
+      <a class="btn secondary" href="/check">Tekrar Test</a>
+    </div>
+
+    <div class="card">
+      <h2>Sonuç</h2>
+      <p><strong>cashguardtr.com</strong> — Skor ve risk seviyen aşağıda.</p>
+      <hr>
+
+      <p><span class="badge {{ level }}">{{ level }}</span></p>
+      <h1>{{ score }}/100</h1>
+
+      <h3>Öne çıkan başlıklar</h3>
+      <ul class="list">
+        {% for msg in messages %}
+          <li>{{ msg }}</li>
+        {% endfor %}
+      </ul>
+{% if score < 60 %}
+  <div class="callout">
+    <h3>⚠️ Nakitiniz korunmuyor</h3>
+    <p>İsterseniz 5 dakikalık ücretsiz online görüşme yapalım. Hızlıca en kritik 2 aksiyonu belirleyelim.</p>
+
+    <div class="pills">
+      <!-- WhatsApp: telefon numaranı ülke koduyla yaz (90...) -->
+      <a class="pill" href="https://wa.me/905316323779" target="_blank">WhatsApp ile yaz</a>
+
+      <!-- Zoom: burada bir randevu linki kullan (Calendly / Google Calendar appointment / Zoom scheduler) -->
+      <a class="pill" href="https://YOUR-ZOOM-BOOKING-LINK" target="_blank">Zoom randevusu al</a>
+
+      <!-- Alternatif: e-posta -->
+      <a class="pill" href="mailto:info@cashguardtr.com?subject=CashGuardTR%20%3C60%20Skor%20-%205%20dk%20g%C3%B6r%C3%BC%C5%9Fme">E-posta</a>
+    </div>
+
+    <p class="small" style="margin-top:10px;">
+      Not: Bu test hızlı ön taramadır. Detaylı analiz için nakit akışı & vade planı çıkarırız.
+    </p>
+  </div>
+{% else %}
+  <div class="callout">
+    <h3>✅ Tebrikler</h3>
+    <p>Nakit yönetiminiz şu an yeterli görünüyor. İşlerin kötü gittiğini düşündüğünüz zaman testi tekrar yapın ve bizimle iletişime geçin.</p>
+
+    <div class="pills">
+      <a class="pill" href="/check">Testi tekrar yap</a>
+      <a class="pill" href="mailto:info@cashguardtr.com?subject=CashGuardTR%20%3E%3D60%20Skor%20-%20Bilgi">İletişime geç</a>
+    </div>
+  </div>
+{% endif %}
+
+      <hr>
+      <div class="actions">
+        <a class="btn" href="/check">Yeni Test</a>
+        <a class="btn secondary" href="/">Ana Sayfa</a>
+      </div>
+
+      <p class="small">Sonraki adım: otomatik aksiyon planı + rapor.</p>
+    </div>
+  </div>
+</body>
+</html>
