@@ -1,11 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Jan 31 13:55:36 2026
-
-@author: oekinci
-"""
 fastapi
 uvicorn
 jinja2
 python-multipart
-
