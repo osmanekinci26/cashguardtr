@@ -204,4 +204,38 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   font-weight:900;
 }
 .pill:hover{ background: rgba(255,255,255,.10); }
+/* =========================
+   Mobile form fixes
+   ========================= */
+
+/* iOS/Chrome mobile: input font-size < 16px olursa otomatik zoom yapar.
+   Bu yüzden 16px ve üstü veriyoruz. */
+input, select, textarea, button {
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+/* Form alanlarını daha “tok” ve dokunulabilir yap */
+input, select {
+  min-height: 44px;          /* Apple touch hedefi */
+  padding: 12px 14px;
+  border-radius: 14px;
+}
+
+/* Kart içi boşlukları mobilde biraz azalt */
+@media (max-width: 700px) {
+  .container { padding: 18px 12px; }
+  .card { padding: 16px; }
+  h1 { font-size: 26px; }
+  h2 { font-size: 18px; }
+  p { font-size: 14px; }
+
+  .grid { grid-template-columns: 1fr; }  /* zaten var ama garanti */
+  .actions { flex-direction: column; align-items: stretch; }
+  .btn { width: 100%; text-align: center; padding: 12px 14px; }
+
+  /* Tooltip (i) varsa mobilde daha rahat tıklansın */
+  .pill { display: inline-block; }
+}
+
 
