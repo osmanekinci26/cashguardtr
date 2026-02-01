@@ -12,7 +12,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 BASE_DIR = Path(__file__).resolve().parent
 FONT_DIR = BASE_DIR / "assets" / "fonts"
-ICON_PATH = BASE_DIR / "static" / "icon-64.png"
+ICON_PATH = BASE_DIR / "static" / "icon-512.png"
 
 # Web sitenin koyu teması (senin eski temaya yakın)
 BG = colors.HexColor("#0b1220")
@@ -93,7 +93,16 @@ def build_pdf_report(payload: dict) -> bytes:
     # --- Header row ---
     # icon
     if ICON_PATH.exists():
-        c.drawImage(str(ICON_PATH), margin_x, y - 14 * mm, width=12 * mm, height=12 * mm, mask="auto")
+        c.drawImage(
+    str(ICON_PATH),
+    margin_x,
+    y - 18 * mm,
+    width=18 * mm,
+    height=18 * mm,
+    mask="auto",
+    preserveAspectRatio=True
+)
+
 
     c.setFillColor(TEXT)
     c.setFont("DejaVu-Bold", 18)
