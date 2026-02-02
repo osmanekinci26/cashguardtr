@@ -11,7 +11,7 @@ from app.scoring import calculate_risk
 from app.pdf_report import build_pdf_report
 
 
-app = FastAPI(title="CashGuard TR")
+app = FastAPI(title="CashGuard")
 
 # Base directory: ...\Desktop\cashguard\app
 BASE_DIR = Path(__file__).resolve().parent
