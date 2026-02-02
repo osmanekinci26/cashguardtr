@@ -66,31 +66,6 @@
             <input type="number" name="top_customer_share" min="0" max="100" required>
           </div>
 
-          <!-- ✅ NEW QUESTION 11 -->
-          <div class="field">
-            <label>11) En büyük müşteri 2 ay ödeme yapmazsa hangi ay nakit açığı oluşur?</label>
-            <select name="top_customer_2m_gap_month" required>
-              <option value="" selected disabled>Seçiniz</option>
-              <option value="1">1. ayda</option>
-              <option value="2">2. ayda</option>
-              <option value="3">3. ayda</option>
-              <option value="4">4. ayda</option>
-              <option value="5">5. ayda</option>
-              <option value="6">6+ ayda</option>
-              <option value="99">Açık oluşmaz</option>
-            </select>
-          </div>
-
-          <!-- ✅ NEW QUESTION 12 -->
-          <div class="field">
-            <label>12) Son 12 ayda plan dışı ödeme ertelemesi yapıldı mı?</label>
-            <select name="unplanned_deferral_12m" required>
-              <option value="" selected disabled>Seçiniz</option>
-              <option value="YES">Evet</option>
-              <option value="NO">Hayır</option>
-            </select>
-          </div>
-
           <div class="field">
             <label>7) Son 12 ay gecikme yaşandı mı?</label>
             <select name="delay_issue" required>
@@ -118,6 +93,31 @@
               <option value="none">Yok</option>
               <option value="basic">Kısmi</option>
               <option value="strong">Var</option>
+            </select>
+          </div>
+
+          <!-- ✅ NEW QUESTION 11 (en sona taşındı) -->
+          <div class="field">
+            <label>11) En büyük müşteri 2 ay ödeme yapmazsa hangi ay nakit açığı oluşur?</label>
+            <select name="top_customer_2m_gap_month" required>
+              <option value="" selected disabled>Seçiniz</option>
+              <option value="1">1. ayda</option>
+              <option value="2">2. ayda</option>
+              <option value="3">3. ayda</option>
+              <option value="4">4. ayda</option>
+              <option value="5">5. ayda</option>
+              <option value="6">6+ ayda</option>
+              <option value="99">Açık oluşmaz</option>
+            </select>
+          </div>
+
+          <!-- ✅ NEW QUESTION 12 (en sona taşındı) -->
+          <div class="field">
+            <label>12) Son 12 ayda plan dışı ödeme ertelemesi yapıldı mı?</label>
+            <select name="unplanned_deferral_12m" required>
+              <option value="" selected disabled>Seçiniz</option>
+              <option value="YES">Evet</option>
+              <option value="NO">Hayır</option>
             </select>
           </div>
 
