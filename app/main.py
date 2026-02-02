@@ -11,7 +11,7 @@ from app.scoring import calculate_risk
 from app.pdf_report import build_pdf_report
 
 
-app = FastAPI(title="CashGuard")
+app = FastAPI(title="CashGuard TR")
 
 # Base directory: ...\Desktop\cashguard\app
 BASE_DIR = Path(__file__).resolve().parent
@@ -49,6 +49,11 @@ def result(
     fx_revenue_ratio: int = Form(...),
     cash_buffer_months: int = Form(...),
     top_customer_share: int = Form(...),
+
+    # ✅ NEW
+    top_customer_2m_gap_month: int = Form(...),
+    unplanned_deferral_12m: str = Form(...),
+
     delay_issue: str = Form(...),
     short_debt_ratio: int = Form(...),
     limit_pressure: str = Form(...),
@@ -61,6 +66,11 @@ def result(
         fx_revenue_ratio=fx_revenue_ratio,
         cash_buffer_months=cash_buffer_months,
         top_customer_share=top_customer_share,
+
+        # ✅ NEW
+        top_customer_2m_gap_month=top_customer_2m_gap_month,
+        unplanned_deferral_12m=unplanned_deferral_12m,
+
         delay_issue=delay_issue,
         short_debt_ratio=short_debt_ratio,
         limit_pressure=limit_pressure,
@@ -73,6 +83,7 @@ def result(
             "score": score,
             "level": level,
             "messages": messages,
+
             # PDF butonu için form girdilerini geri gönderiyoruz:
             "collection_days": collection_days,
             "payable_days": payable_days,
@@ -80,6 +91,11 @@ def result(
             "fx_revenue_ratio": fx_revenue_ratio,
             "cash_buffer_months": cash_buffer_months,
             "top_customer_share": top_customer_share,
+
+            # ✅ NEW
+            "top_customer_2m_gap_month": top_customer_2m_gap_month,
+            "unplanned_deferral_12m": unplanned_deferral_12m,
+
             "delay_issue": delay_issue,
             "short_debt_ratio": short_debt_ratio,
             "limit_pressure": limit_pressure,
@@ -99,6 +115,11 @@ def result_pdf(
     fx_revenue_ratio: int = Form(...),
     cash_buffer_months: int = Form(...),
     top_customer_share: int = Form(...),
+
+    # ✅ NEW
+    top_customer_2m_gap_month: int = Form(...),
+    unplanned_deferral_12m: str = Form(...),
+
     delay_issue: str = Form(...),
     short_debt_ratio: int = Form(...),
     limit_pressure: str = Form(...),
@@ -113,6 +134,11 @@ def result_pdf(
         fx_revenue_ratio=fx_revenue_ratio,
         cash_buffer_months=cash_buffer_months,
         top_customer_share=top_customer_share,
+
+        # ✅ NEW
+        top_customer_2m_gap_month=top_customer_2m_gap_month,
+        unplanned_deferral_12m=unplanned_deferral_12m,
+
         delay_issue=delay_issue,
         short_debt_ratio=short_debt_ratio,
         limit_pressure=limit_pressure,
@@ -130,6 +156,11 @@ def result_pdf(
         "fx_revenue_ratio": fx_revenue_ratio,
         "cash_buffer_months": cash_buffer_months,
         "top_customer_share": top_customer_share,
+
+        # ✅ NEW
+        "top_customer_2m_gap_month": top_customer_2m_gap_month,
+        "unplanned_deferral_12m": unplanned_deferral_12m,
+
         "delay_issue": delay_issue,
         "short_debt_ratio": short_debt_ratio,
         "limit_pressure": limit_pressure,

@@ -8,7 +8,7 @@
 <body>
   <div class="container">
     <div class="nav">
-      <div class="brand">CashGuard TR</div>
+      <div class="brand">CashGuard</div>
       <a class="btn secondary" href="/check">Tekrar Test</a>
     </div>
 
@@ -68,13 +68,18 @@
           <input type="text" name="company" placeholder="Örn: ABC Savunma Sanayi A.Ş.">
         </div>
 
-        <!-- Hidden: sonuç girdileri (PDF endpoint aynı verileri kullanır) -->
+        <!-- Hidden: sonuç girdileri -->
         <input type="hidden" name="collection_days" value="{{ collection_days }}">
         <input type="hidden" name="payable_days" value="{{ payable_days }}">
         <input type="hidden" name="fx_debt_ratio" value="{{ fx_debt_ratio }}">
         <input type="hidden" name="fx_revenue_ratio" value="{{ fx_revenue_ratio }}">
         <input type="hidden" name="cash_buffer_months" value="{{ cash_buffer_months }}">
         <input type="hidden" name="top_customer_share" value="{{ top_customer_share }}">
+
+        <!-- ✅ NEW -->
+        <input type="hidden" name="top_customer_2m_gap_month" value="{{ top_customer_2m_gap_month }}">
+        <input type="hidden" name="unplanned_deferral_12m" value="{{ unplanned_deferral_12m }}">
+
         <input type="hidden" name="delay_issue" value="{{ delay_issue }}">
         <input type="hidden" name="short_debt_ratio" value="{{ short_debt_ratio }}">
         <input type="hidden" name="limit_pressure" value="{{ limit_pressure }}">
