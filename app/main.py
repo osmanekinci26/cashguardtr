@@ -36,8 +36,15 @@ def _sanitize_sector(sector: str | None) -> str:
 
 @app.get("/", response_class=HTMLResponse)
 def landing(request: Request):
-    ctx = _common_ctx(request, "CashGuard TR | cashguardtr.com")
+    ctx = _common_ctx(request, "CashGuard | cashguardtr.com")
     return templates.TemplateResponse("index.html", ctx)
+
+
+# ✅ NEW: Why-cash page route
+@app.get("/why-cash", response_class=HTMLResponse)
+def why_cash(request: Request):
+    ctx = _common_ctx(request, "Nakit Neden Korunmalı? | CashGuard")
+    return templates.TemplateResponse("why-cash.html", ctx)
 
 
 @app.get("/check", response_class=HTMLResponse)
@@ -45,7 +52,7 @@ def check(request: Request, sector: str = "defense"):
     sector = _sanitize_sector(sector)
     sector_label = SECTOR_LABELS[sector]
 
-    ctx = _common_ctx(request, f"{sector_label} Risk Testi | CashGuard TR")
+    ctx = _common_ctx(request, f"{sector_label} Risk Testi | CashGuard")
     ctx.update({"sector": sector, "sector_label": sector_label})
     return templates.TemplateResponse("check.html", ctx)
 
@@ -92,7 +99,7 @@ def result(
         hedging=hedging,
     )
 
-    ctx = _common_ctx(request, f"Sonuç | {sector_label} | CashGuard TR")
+    ctx = _common_ctx(request, f"Sonuç | {sector_label} | CashGuard")
     ctx.update(
         {
             "sector": sector,
@@ -202,25 +209,25 @@ def result_pdf(
 
 @app.get("/about", response_class=HTMLResponse)
 def about(request: Request):
-    ctx = _common_ctx(request, "Hakkında | CashGuard TR")
+    ctx = _common_ctx(request, "Hakkında | CashGuard")
     return templates.TemplateResponse("about.html", ctx)
 
 
 @app.get("/team", response_class=HTMLResponse)
 def team(request: Request):
-    ctx = _common_ctx(request, "Biz Kimiz | CashGuard TR")
+    ctx = _common_ctx(request, "Biz Kimiz | CashGuard")
     return templates.TemplateResponse("team.html", ctx)
 
 
 @app.get("/services", response_class=HTMLResponse)
 def services(request: Request):
-    ctx = _common_ctx(request, "Hizmetlerimiz | CashGuard TR")
+    ctx = _common_ctx(request, "Hizmetlerimiz | CashGuard")
     return templates.TemplateResponse("services.html", ctx)
 
 
 @app.get("/contact", response_class=HTMLResponse)
 def contact(request: Request):
-    ctx = _common_ctx(request, "İletişim | CashGuard TR")
+    ctx = _common_ctx(request, "İletişim | CashGuard")
     return templates.TemplateResponse("contact.html", ctx)
 
 
