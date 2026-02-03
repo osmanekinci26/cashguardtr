@@ -8,14 +8,30 @@
 </head>
 <body>
   <div class="container">
-    <div class="nav">
-  <div class="brand">CashGuard</div>
-  <div style="display:flex; gap:10px;">
-    <a class="btn secondary" href="/#sector">Sektör Değiştir</a>
-    <a class="btn secondary" href="/">Ana Sayfa</a>
-  </div>
-</div>
 
+    <div class="nav">
+      <div class="brand">CashGuard</div>
+
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+
+        <!-- ✅ Sektör değiştir (test içinden) -->
+        <form action="/check" method="get" style="display:flex; gap:8px; align-items:center; margin:0;">
+          <select name="sector" onchange="this.form.submit()" style="min-width:200px;">
+            <option value="defense" {% if sector=='defense' %}selected{% endif %}>Savunma Sanayi</option>
+            <option value="construction" {% if sector=='construction' %}selected{% endif %}>İnşaat</option>
+            <option value="electrical" {% if sector=='electrical' %}selected{% endif %}>Elektrik Taahhüt</option>
+            <option value="energy" {% if sector=='energy' %}selected{% endif %}>Enerji</option>
+          </select>
+
+          <!-- JS kapalıysa -->
+          <noscript>
+            <button class="btn secondary" type="submit">Sektörü Değiştir</button>
+          </noscript>
+        </form>
+
+        <a class="btn secondary" href="/">Ana Sayfa</a>
+      </div>
+    </div>
 
     <div class="card">
       <h2>{{ sector_label }} Risk Testi</h2>
@@ -137,6 +153,7 @@
         <p class="small">Not: Bu test hızlı ön taramadır. Detaylı çalışma için cashguardtr.com üzerinden iletişime geçebilirsin.</p>
       </form>
     </div>
+
   </div>
 </body>
 </html>
