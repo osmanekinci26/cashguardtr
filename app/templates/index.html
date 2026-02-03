@@ -6,12 +6,12 @@
   <div class="card">
     <h1>KOBİ’ler için hızlı finansal risk taraması</h1>
     <p class="sub">
-      <strong>cashguardtr.com</strong> — Savunma sanayi KOBİ’leri odaklı: vade makası, kur uyumsuzluğu,
-      müşteri yoğunlaşması ve borç baskısını, <strong>nakitinizin korunup korunmadığını</strong> 3 dakikada görün.
+      <strong>cashguardtr.com</strong> — Savunma Sanayi, İnşaat, Elektrik Taahhüt ve Enerji sektörleri için:
+  vade makası, kur uyumsuzluğu, müşteri yoğunlaşması ve borç baskısını, <strong>nakitinizin korunup korunmadığını</strong> 3 dakikada görün.
     </p>
 
     <div class="hero-actions">
-      <a class="btn" href="/check?sector=defense">Risk Testini Başlat</a>
+      <a class="btn" href="#sector">Sektör Seç</a>
       <a class="btn secondary" href="/services">Hizmetleri Gör</a>
     </div>
 
@@ -47,6 +47,21 @@
   </div>
 </div>
 
+<div class="kpi" id="sector">
+  <div class="big">SEKTÖR SEÇ</div>
+  <div class="label" style="margin-top:6px;">
+    <form action="/check" method="get" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+      <select name="sector" style="max-width:240px;">
+        <option value="defense" selected>Savunma Sanayi</option>
+        <option value="construction">İnşaat</option>
+        <option value="electrical">Elektrik Taahhüt</option>
+        <option value="energy">Enerji</option>
+      </select>
+      <button class="btn" type="submit">Testi Başlat</button>
+    </form>
+  </div>
+</div>
+
 <!-- Nakit Neden Korunmalı (index içinde kısa teaser) -->
 <div class="section">
   <div class="card">
@@ -59,7 +74,7 @@
     </p>
 
     <div class="actions" style="margin-top:12px;">
-      <a class="btn" href="/check?sector=defense">Risk Testini Başlat</a>
+      <a class="btn" href="#sector">Sektör Seç → Testi Başlat</a>
       <a class="btn secondary" href="/why-cash">Detayı Oku</a>
       <a class="btn secondary" href="/contact">İletişime Geç</a>
     </div>
