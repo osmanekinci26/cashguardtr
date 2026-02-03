@@ -11,7 +11,7 @@
     </p>
 
     <div class="hero-actions">
-      <a class="btn" href="/check">Risk Testini Başlat</a>
+      <a class="btn" href="/check?sector=defense">Risk Testini Başlat</a>
       <a class="btn secondary" href="/services">Hizmetleri Gör</a>
     </div>
 
@@ -22,54 +22,51 @@
         <div class="big">3 dk</div>
         <div class="label">Ön risk taraması</div>
       </div>
+
       <div class="kpi">
         <div class="big">GREEN / YELLOW / RED</div>
         <div class="label">Basit ve net sonuç, ücretsiz PDF rapor</div>
       </div>
+
+      <!-- ✅ Sektör seç (KPI içinde buton / dropdown) -->
       <div class="kpi">
         <div class="big">NAKİT KORUMASI</div>
-        <div class="label">İlk faz: savunma sanayi KOBİ</div>
+        <div class="label" style="margin-top:6px;">
+          <form action="/check" method="get" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <select name="sector" style="max-width:220px;">
+              <option value="defense" selected>Savunma Sanayi</option>
+              <option value="construction">İnşaat</option>
+              <option value="electrical">Elektrik Taahhüt</option>
+              <option value="energy">Enerji</option>
+            </select>
+            <button class="btn" type="submit">Sektör Seç</button>
+          </form>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Nakit Neden Korunmalı (index içinde kısa teaser kalsın) -->
+<!-- Nakit Neden Korunmalı (index içinde kısa teaser) -->
 <div class="section">
   <div class="card">
     <div class="section-title">Nakit Neden Korunmalı?</div>
 
     <p><strong>Kâr sizi “iyi” gösterebilir; nakit ise sizi hayatta tutar.</strong></p>
-
     <p>
       Türkiye gibi yüksek enflasyon ve oynak kur ortamında şirketler çoğu zaman kârlı olduğu hâlde zorlanır:
       tahsilat gecikir, kur farkı büyür, limitler sıkışır, tedarikçi peşin ister.
     </p>
 
-    <p>
-      <strong>Nakit korunmazsa</strong>, tek bir müşterinin 60 gün gecikmesi bile;
-      maaş, vergi, SGK ve kritik tedarik ödemelerini riske atar.
-    </p>
-
-    <p>
-      CashGuard; “limit makyajı” değil, <strong>ölçülebilir göstergelerle</strong> şu soruya cevap verir:
-      <br>
-      <strong>“Önümüzdeki 60–90 günde nakit kırılganlığım nerede patlar?”</strong>
-    </p>
-
-    <p>
-      Çünkü en doğru finans kararı, <strong>kriz gelmeden 30 gün önce</strong> alınandır.
-    </p>
-
     <div class="actions" style="margin-top:12px;">
-      <a class="btn" href="/check">Risk Testini Başlat</a>
+      <a class="btn" href="/check?sector=defense">Risk Testini Başlat</a>
       <a class="btn secondary" href="/why-cash">Detayı Oku</a>
       <a class="btn secondary" href="/contact">İletişime Geç</a>
     </div>
   </div>
 </div>
 
-<!-- Kısa Özet Kartları -->
+<!-- Hızlı Başlangıç -->
 <div class="section">
   <div class="card">
     <div class="section-title">Hızlı Başlangıç</div>
@@ -110,7 +107,7 @@
 
     <hr>
     <div class="actions">
-      <a class="btn" href="/check">Teste Git</a>
+      <a class="btn" href="/check?sector=defense">Teste Git</a>
       <a class="btn secondary" href="/contact">İletişim</a>
     </div>
   </div>
