@@ -2,10 +2,16 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <title>{{ title or "CashGuard TR | cashguardtr.com" }}</title>
+  <title>{{ title or "CashGuard | cashguardtr.com" }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- favicon (varsa) -->
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
-  <link rel="stylesheet" href="/static/style.css?v=2">
+  <!-- eğer favicon.ico yoksa bunu kullanabilirsin:
+  <link rel="icon" href="/static/icon-64.png" type="image/png">
+  -->
+
+  <link rel="stylesheet" href="/static/style.css?v=3">
 </head>
 
 <body>
@@ -16,21 +22,22 @@
         <a href="/" style="color:inherit;text-decoration:none;">CashGuard</a>
       </div>
 
-<div class="navlinks">
-  <a href="/why-cash">Nakit Neden Korunmalı?</a>
-  <a href="/about">Hakkında</a>
-  <a href="/team">Biz Kimiz</a>
-  <a href="/services">Hizmetler</a>
-  <a href="/contact">İletişim</a>
-</div>
+      <div class="navlinks">
+        <a href="/why-cash">Nakit Neden Korunmalı?</a>
+        <a href="/about">Hakkında</a>
+        <a href="/team">Biz Kimiz</a>
+        <a href="/services">Hizmetler</a>
+        <a href="/contact">İletişim</a>
+      </div>
+    </div>
+  </div>
 
-
-
+  <!-- Page content -->
   <div class="container">
     {% block content %}{% endblock %}
 
     <div class="footer">
-      © {{ year }} CashGuard TR — cashguardtr.com
+      © {{ year }} CashGuard — cashguardtr.com
     </div>
   </div>
 </body>
