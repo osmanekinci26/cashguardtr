@@ -373,4 +373,23 @@ input, select {
     padding:10px 12px;
   }
 }
+.brand-logo{
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Desktop’ta yazı görünsün */
+.brand-text{
+  display: inline-block;
+  margin-left: 6px;
+}
+
+/* Mobilde yazıyı gizle, sadece C kalsın */
+@media (max-width: 700px){
+  .brand-text{
+    display: none;
+  }
+}
 
