@@ -401,4 +401,18 @@ input, select {
     display: none;
   }
 }
+/* === Mobile: sector arrow down === */
+@media (max-width: 700px){
+  .sector-arrow{
+    display:inline-block;
+    transform: rotate(90deg);           /* ➜  ->  ⬇ gibi görünür */
+    animation: sectorNudgeDown 1.1s ease-in-out infinite;
+  }
+
+  @keyframes sectorNudgeDown{
+    0%{ transform: rotate(90deg) translateY(0); }
+    50%{ transform: rotate(90deg) translateY(4px); }
+    100%{ transform: rotate(90deg) translateY(0); }
+  }
+}
 
