@@ -9,11 +9,12 @@
   <div class="container">
     <div class="nav">
       <div class="brand">CashGuard</div>
-      <a class="btn secondary" href="/check">Tekrar Test</a>
+      <!-- ✅ aynı sektörde tekrar test -->
+      <a class="btn secondary" href="/check?sector={{ sector }}">Tekrar Test</a>
     </div>
 
     <div class="card">
-      <h2>Sonuç</h2>
+      <h2>Sonuç — {{ sector_label }}</h2>
       <p><strong>cashguardtr.com</strong> — Skor ve risk seviyen aşağıda.</p>
       <hr>
 
@@ -48,7 +49,8 @@
           <p>Nakit yönetiminiz şu an yeterli görünüyor. İşlerin kötü gittiğini düşündüğünüz zaman testi tekrar yapın ve bizimle iletişime geçin.</p>
 
           <div class="pills">
-            <a class="pill" href="/check">Testi tekrar yap</a>
+            <!-- ✅ aynı sektörde tekrar test -->
+            <a class="pill" href="/check?sector={{ sector }}">Testi tekrar yap</a>
             <a class="pill" href="mailto:info@cashguardtr.com?subject=CashGuardTR%20%3E%3D60%20Skor%20-%20Bilgi">İletişime geç</a>
           </div>
         </div>
@@ -68,16 +70,16 @@
           <input type="text" name="company" placeholder="Örn: ABC Savunma Sanayi A.Ş.">
         </div>
 
-        <!-- Hidden: sonuç girdileri -->
+        <!-- ✅ Hidden: sektör + sonuç girdileri -->
+        <input type="hidden" name="sector" value="{{ sector }}">
+
         <input type="hidden" name="collection_days" value="{{ collection_days }}">
         <input type="hidden" name="payable_days" value="{{ payable_days }}">
         <input type="hidden" name="fx_debt_ratio" value="{{ fx_debt_ratio }}">
         <input type="hidden" name="fx_revenue_ratio" value="{{ fx_revenue_ratio }}">
         <input type="hidden" name="cash_buffer_months" value="{{ cash_buffer_months }}">
         <input type="hidden" name="top_customer_share" value="{{ top_customer_share }}">
-        <input type="hidden" name="sector" value="{{ sector }}">
 
-        <!-- ✅ NEW -->
         <input type="hidden" name="top_customer_2m_gap_month" value="{{ top_customer_2m_gap_month }}">
         <input type="hidden" name="unplanned_deferral_12m" value="{{ unplanned_deferral_12m }}">
 
@@ -89,7 +91,8 @@
         <div class="actions">
           <button class="btn" type="submit">PDF Raporu İndir</button>
           <a class="btn secondary" href="/">Ana Sayfa</a>
-          <a class="btn secondary" href="/check">Yeni Test</a>
+          <!-- ✅ aynı sektörde yeni test -->
+          <a class="btn secondary" href="/check?sector={{ sector }}">Yeni Test</a>
         </div>
       </form>
 

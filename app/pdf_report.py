@@ -67,7 +67,7 @@ def build_pdf_report(payload: dict) -> bytes:
     """
     Returns PDF bytes. payload should include:
     score, level, messages (list[str]) and input fields.
-    Optional: company
+    Optional: company, sector
     """
     _register_fonts()
 
@@ -102,6 +102,7 @@ def build_pdf_report(payload: dict) -> bytes:
         )
 
     title_x = logo_x + logo_size + 6 * mm
+
     c.setFillColor(TEXT)
     c.setFont("DejaVu-Bold", 18)
     c.drawString(title_x, height - 10 * mm, "CashGuard")
@@ -110,12 +111,23 @@ def build_pdf_report(payload: dict) -> bytes:
     c.setFillColor(MUTED)
     c.drawString(title_x, height - 16 * mm, "Nakit Risk Taraması Raporu")
 
+    # ✅ NEW: Sector line (optional)
+    sector = (payload.get("sector") or "").strip()
+    if sector:
+        c.setFont("DejaVu", 10.5)
+        c.setFillColor(MUTED)
+        c.drawString(title_x, height - 21.5 * mm, f"Sektör: {sector}")
+
     c.setFont("DejaVu", 10)
     c.setFillColor(MUTED)
     c.drawRightString(width - margin_x, height - 10 * mm, datetime.now().strftime("%d.%m.%Y %H:%M"))
 
     # content y start
     y = top_y - 10 * mm
+
+    # Eğer sektör satırı yazıldıysa içerik yukarıdan biraz daha aşağı başlasın (çakışma olmasın)
+    if sector:
+        y -= 6 * mm
 
     # =========================
     # Summary Card
@@ -241,13 +253,11 @@ def build_pdf_report(payload: dict) -> bytes:
     c.setFont(font_name, font_size)
 
     for msg in payload.get("messages", []):
-        # Wrap lines with fixed width
         text_x = margin_x + 7 * mm
         bullet_cx = margin_x + 2.2 * mm
 
         lines = _wrap_text(c, msg, max_w - 7 * mm, font_name, font_size)
 
-        # page break if needed
         needed_h = (len(lines) * line_h) + (3.0 * mm)
         if y - needed_h < 16 * mm:
             c.showPage()
@@ -260,7 +270,6 @@ def build_pdf_report(payload: dict) -> bytes:
             y -= 7 * mm
             c.setFont(font_name, font_size)
 
-        # bullet aligned to first line
         c.setFillColor(ACCENT)
         c.circle(bullet_cx, y - (line_h * 0.35), 1.1 * mm, fill=1, stroke=0)
 
