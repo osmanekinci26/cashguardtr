@@ -4,21 +4,30 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ title }}</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v=3">
 </head>
 <body>
   <div class="container">
 
     <div class="nav">
-      <div class="brand">CashGuard</div>
+      <!-- BRAND: desktop yazı, mobil logo -->
+      <div class="brand">
+        <a href="/" class="brand-link">
+          <img src="/static/icon-64.png" alt="C" class="brand-logo">
+          <span class="brand-text">CashGuard</span>
+        </a>
+      </div>
 
+      <!-- RIGHT SIDE -->
       <div class="nav-right">
-        <!-- ✅ SEKTÖR SEÇ: solda metin+ok, sağda dropdown -->
+
+        <!-- SEKTÖR SEÇ -->
         <div class="sector-picker">
-          <span class="sector-label">
+
+          <div class="sector-label">
             <span class="sector-badge">SEKTÖR SEÇ</span>
             <span class="sector-arrow">➜</span>
-          </span>
+          </div>
 
           <form action="/check" method="get" class="sector-form">
             <select name="sector" onchange="this.form.submit()" class="sector-select">
@@ -32,6 +41,7 @@
               <button class="btn secondary" type="submit">Seç</button>
             </noscript>
           </form>
+
         </div>
 
         <a class="btn secondary" href="/">Ana Sayfa</a>
@@ -43,7 +53,7 @@
       <p><strong>cashguardtr.com</strong> — Bankaya gitmeden önce kırmızı/sarı/yeşil görün.</p>
 
       <form action="/result" method="post">
-        <!-- ✅ sektörü sakla -->
+        <!-- sektörü sakla -->
         <input type="hidden" name="sector" value="{{ sector }}">
 
         <div class="grid">
