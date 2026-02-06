@@ -1,0 +1,2 @@
+[35mapp/main.py[m[36m:[m[32m8[m[36m:[mfrom fastapi import FastAPI, Request, Form, [1;31mUploadFile[m, File, Depends
+[35mapp/main.py[m[36m:[m[32m355[m[36m:[m    file: [1;31mUploadFile[m = File(...),
