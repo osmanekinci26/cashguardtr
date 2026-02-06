@@ -8,6 +8,7 @@ from typing import Dict, List, Tuple, Optional
 
 # -------------------------------------------------
 # 1) Normalizasyon: türkçe karakter, noktalama, boşluk
+#    + BAŞTAKİ "I / II / A / 1" gibi prefixleri kırp
 # -------------------------------------------------
 def normalize_text(s: str) -> str:
     if s is None:
@@ -22,9 +23,27 @@ def normalize_text(s: str) -> str:
     s = unicodedata.normalize("NFKD", s)
     s = "".join(ch for ch in s if not unicodedata.combining(ch))
 
-    # özel karakter temizliği
+    # alfanumerik dışında temizle
     s = re.sub(r"[^a-z0-9\s]", " ", s)
     s = re.sub(r"\s+", " ", s).strip()
+
+    # ✅ BAŞTAKİ "I / II / III / A / 1" gibi prefixleri kırp
+    roman = {"i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"}
+    tokens = s.split()
+    while tokens:
+        t = tokens[0]
+        if t in roman:
+            tokens.pop(0)
+            continue
+        if t.isdigit():
+            tokens.pop(0)
+            continue
+        if len(t) == 1 and t.isalpha():  # a, b, c...
+            tokens.pop(0)
+            continue
+        break
+    s = " ".join(tokens).strip()
+
     return s
 
 
@@ -51,7 +70,6 @@ def best_fuzzy_match(
 # -------------------------------------------------
 # 2) Kanonik (standart) kalem anahtarları
 # -------------------------------------------------
-# Analiz motoru bu anahtarlar üzerinden hesap yapmalı.
 CANONICAL_KEYS = {
     # -------------------------
     # Bilanço - Dönen Varlıklar
@@ -76,12 +94,12 @@ CANONICAL_KEYS = {
     "non_current_assets_total": "Duran Varlıklar Toplamı",
 
     # -------------------------
-    # Bilanço - Toplam Varlık
+    # Toplam Varlık
     # -------------------------
     "total_assets": "Toplam Varlıklar / Aktif Toplamı",
 
     # -------------------------
-    # Yükümlülükler (Kısa/Uzun)
+    # Yükümlülükler
     # -------------------------
     "short_term_liabilities": "Kısa Vadeli Yükümlülükler",
     "long_term_liabilities": "Uzun Vadeli Yükümlülükler",
@@ -93,7 +111,6 @@ CANONICAL_KEYS = {
     "tax_liabilities": "Vergi Yükümlülükleri",
     "provisions_st": "Kısa Vadeli Karşılıklar",
     "provisions_lt": "Uzun Vadeli Karşılıklar",
-
     "total_liabilities": "Toplam Yükümlülükler / Borçlar Toplamı",
 
     # -------------------------
@@ -114,24 +131,19 @@ CANONICAL_KEYS = {
     "opex": "Faaliyet Giderleri",
     "ebitda": "FAVÖK",
     "ebit": "Faaliyet Kârı (EBIT)",
-
     "finance_income": "Finansman Gelirleri",
     "finance_expense": "Finansman Giderleri",
     "interest_expense": "Faiz Gideri",
     "fx_gain_loss": "Kur Farkı Gelir/Gider",
-
     "tax_expense": "Vergi Gideri",
-    "net_profit_is": "Net Dönem Kârı/Zararı (Gelir Tablosu)",  # bazı excel’lerde ayrı gelir tablosu net kâr kalemi
+    "net_profit_is": "Net Dönem Kârı/Zararı (Gelir Tablosu)",
 }
 
 
 # -------------------------------------------------
-# 3) Maksimum eşanlam listeleri (TR/IFRS/TDHP)
+# 3) Maksimum eşanlam listeleri
 # -------------------------------------------------
 SYNONYMS: Dict[str, List[str]] = {
-    # =========================
-    # CASH
-    # =========================
     "cash_and_equivalents": [
         "nakit", "kasa", "kasa ve banka", "kasa bankalar", "banka", "bankalar",
         "banka mevduatlari", "mevduat", "vadesiz mevduat", "vadeli mevduat",
@@ -141,15 +153,11 @@ SYNONYMS: Dict[str, List[str]] = {
         "serbest mevduat", "blokeli mevduat", "bloke mevduat",
     ],
 
-    # =========================
-    # RECEIVABLES
-    # =========================
     "trade_receivables": [
         "ticari alacaklar", "alacaklar", "musteri alacaklari", "alici hesaplari",
         "alacak senetleri", "senetli alacaklar", "ticari alacak senetleri",
         "cekler", "cekler ve senetler", "alici cekleri",
         "trade receivables", "accounts receivable", "account receivable", "ar",
-        # IFRS15 / hakediş
         "sozlesme varligi", "contract assets", "ifr s 15 sozlesme varligi",
         "hak edis", "hak edis alacaklari", "hakedis alacagi", "hakediş alacağı",
         "progress billings receivable", "progress receivable",
@@ -163,21 +171,14 @@ SYNONYMS: Dict[str, List[str]] = {
         "verilen avanslar", "avanslar (verilen)", "siparis avanslari", "is avanslari",
     ],
 
-    # =========================
-    # INVENTORIES / WIP
-    # =========================
     "inventories": [
         "stoklar", "ham madde", "ilk madde malzeme", "yarimamul", "yari mamul", "mamul",
         "ticari mallar", "sarf malzemesi", "yedek parca",
         "inventories", "work in progress", "wip",
-        # inşaat/taahhüt varyantları
         "insaat maliyetleri", "proje maliyetleri", "taahhut maliyetleri",
         "devam eden insaatlar", "devam eden projeler",
     ],
 
-    # =========================
-    # PREPAIDS / OTHER CURRENT
-    # =========================
     "prepaid_expenses": [
         "pesin odenmis giderler", "gelecek aylara ait giderler",
         "prepaid expenses", "advance payments",
@@ -190,12 +191,10 @@ SYNONYMS: Dict[str, List[str]] = {
         "gelir tahakkuklari", "tahakkuk", "accrued income",
     ],
     "current_assets_total": [
-        "donen varliklar toplami", "toplam donen varliklar", "donen varliklar", "current assets", "current assets total",
+        "donen varliklar toplami", "toplam donen varliklar", "donen varliklar",
+        "current assets", "current assets total",
     ],
 
-    # =========================
-    # NON-CURRENT ASSETS
-    # =========================
     "ppe": [
         "maddi duran varliklar", "mdv", "ppe",
         "property plant equipment", "property, plant and equipment",
@@ -227,16 +226,14 @@ SYNONYMS: Dict[str, List[str]] = {
         "uzun vadeli depozito", "uzun vadeli teminat",
     ],
     "non_current_assets_total": [
-        "duran varliklar toplami", "toplam duran varliklar", "duran varliklar", "non current assets", "non-current assets", "non-current assets total",
+        "duran varliklar toplami", "toplam duran varliklar", "duran varliklar",
+        "non current assets", "non-current assets", "non-current assets total",
     ],
     "total_assets": [
         "aktif toplami", "varliklar toplami", "toplam varliklar", "bilanco toplami",
         "total assets", "assets total",
     ],
 
-    # =========================
-    # LIABILITIES
-    # =========================
     "short_term_liabilities": [
         "kisa vadeli yukumlulukler", "kv yukumlulukler", "kisa vadeli borclar",
         "kisa vadeli yabanci kaynaklar", "cari yukumlulukler",
@@ -259,6 +256,8 @@ SYNONYMS: Dict[str, List[str]] = {
         "short term borrowings", "short term loans", "short term debt", "short-term debt",
         "kisa vadeli tahvil", "kisa vadeli bono",
         "kredi karti borcu", "faktoring borcu", "leasing borcu (kisa)",
+        # ✅ TDHP / excel varyantları
+        "mali borclar", "kisa vadeli mali borclar",
     ],
     "long_term_fin_debt": [
         "uzun vadeli finansal borclar", "uzun vadeli finansal yukumlulukler",
@@ -266,6 +265,7 @@ SYNONYMS: Dict[str, List[str]] = {
         "long term borrowings", "long term loans", "long term debt", "long-term debt",
         "uzun vadeli tahvil", "uzun vadeli bono",
         "leasing borcu (uzun)",
+        "uzun vadeli mali borclar",
     ],
     "lease_liabilities_st": [
         "kisa vadeli kiralama yukumlulugu", "kiralama yukumlulugu kisa vade",
@@ -294,13 +294,12 @@ SYNONYMS: Dict[str, List[str]] = {
         "yabanci kaynaklar toplami", "toplam yabanci kaynaklar",
     ],
 
-    # =========================
-    # EQUITY
-    # =========================
     "equity_total": [
         "ozkaynak", "ozkaynaklar", "oz sermaye", "ozsermaye",
         "equity", "total equity", "shareholders equity",
         "ana ortakliga ait ozkaynak", "toplam ozkaynak",
+        # ✅ excel prefixleri normalize kırptığı için artık direkt tutar
+        "ozkaynaklar toplami", "toplam ozkaynaklar",
     ],
     "paid_in_capital": [
         "odenmis sermaye", "sermaye", "paid in capital", "share capital", "capital",
@@ -320,9 +319,6 @@ SYNONYMS: Dict[str, List[str]] = {
         "total liabilities and equity", "liabilities and equity total",
     ],
 
-    # =========================
-    # INCOME STATEMENT
-    # =========================
     "revenue": [
         "hasilat", "net satislar", "satis gelirleri", "ciro",
         "revenue", "net sales", "sales", "satışlar",
@@ -356,6 +352,8 @@ SYNONYMS: Dict[str, List[str]] = {
         "finansman giderleri", "finansal giderler", "financial expenses",
         "finance expense", "financing costs", "borclanma giderleri",
         "kredi giderleri", "faiz giderleri (genel)",
+        # ✅ bazı excel’ler “finansman giderleri (faiz + kur farkı)” yazar
+        "faiz ve kur farki giderleri",
     ],
     "interest_expense": [
         "faiz gideri", "faiz giderleri", "kredi faiz gideri",
@@ -380,35 +378,34 @@ SYNONYMS: Dict[str, List[str]] = {
 # -------------------------------------------------
 # 4) Eşleştirme fonksiyonu
 # -------------------------------------------------
-# Excel'den gelen satır isimleri -> canonical_key
-# Önce: direkt eşanlam + canonical label
-# Sonra: contains (alt dize)
+# Önce: synonym + canonical label
+# Sonra: contains
 # Sonra: fuzzy
-# Yoksa: None
-
+# -------------------------------------------------
 def _build_normalized_synonyms() -> Dict[str, List[str]]:
     out: Dict[str, List[str]] = {}
     for key, xs in SYNONYMS.items():
         vals = list(xs)
 
-        # canonical label'ı da otomatik ekle (birebir yakalasın)
+        # canonical label'ı da otomatik ekle
         if key in CANONICAL_KEYS:
             vals.append(CANONICAL_KEYS[key])
 
         # key kendisini de ekleyelim (bazı excel'ler direkt key yazar)
         vals.append(key)
 
-        # normalize
-        out[key] = [normalize_text(x) for x in vals if x is not None and str(x).strip()]
+        normed = [normalize_text(x) for x in vals if x is not None and str(x).strip()]
 
         # unique
         uniq = []
         seen = set()
-        for t in out[key]:
+        for t in normed:
             if t not in seen:
                 uniq.append(t)
                 seen.add(t)
+
         out[key] = uniq
+
     return out
 
 
@@ -431,8 +428,7 @@ def map_item_to_key(item_name: str) -> Optional[str]:
     if n in _term_to_key:
         return _term_to_key[n]
 
-    # 2) contains match (örn: "kisa vadeli yukumlulukler toplami" -> "kisa vadeli yukumlulukler")
-    #    kısa terimler false-positive yapmasın diye min uzunluk şartı.
+    # 2) contains match
     for term, key in _term_to_key.items():
         if len(term) >= 6 and term in n:
             return key
