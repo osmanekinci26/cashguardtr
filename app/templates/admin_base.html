@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>{{ title or "CashGuard Admin" }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/static/style.css?v=2">
+</head>
+<body>
+  <div class="container">
+
+    <div class="nav" style="margin-bottom:16px;">
+      <div class="brand">
+        <a href="/admin" style="color:inherit; text-decoration:none;">
+          Admin Panel
+        </a>
+      </div>
+
+      <div style="display:flex; gap:10px; align-items:center;">
+        <a class="btn secondary" href="/" target="_blank">Siteyi Aç</a>
+        {% if admin_email %}
+          <span class="small">{{ admin_email }}</span>
+          <a class="btn secondary" href="/admin/logout">Çıkış</a>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if error %}
+      <div class="callout" style="border-color: rgba(239,68,68,.35);">
+        <h3 style="margin:0 0 6px 0;">Hata</h3>
+        <p style="margin:0;">{{ error }}</p>
+      </div>
+      <hr>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+    <div class="footer">© {{ year }} CashGuard — Admin</div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,50 @@
+{% extends "admin_base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Firmalar</h2>
+  <p>Yeni firma oluştur, dosya yükle ve analiz al.</p>
+
+  <hr>
+
+  <h3>Yeni firma ekle</h3>
+  <form action="/admin/companies/create" method="post">
+    <div class="grid">
+      <div class="field">
+        <label>Firma adı</label>
+        <input type="text" name="name" required placeholder="Örn: ABC A.Ş.">
+      </div>
+      <div class="field">
+        <label>Sektör</label>
+        <select name="sector" required>
+          <option value="defense">Savunma Sanayi</option>
+          <option value="construction">İnşaat</option>
+          <option value="electrical">Elektrik Taahhüt</option>
+          <option value="energy">Enerji</option>
+        </select>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" type="submit">Firma Oluştur</button>
+    </div>
+  </form>
+
+  <hr>
+
+  <h3>Mevcut firmalar</h3>
+  <div class="features">
+    {% for c in companies %}
+      <div class="feature">
+        <h3>{{ c.name }}</h3>
+        <p class="small">Sektör: <strong>{{ c.sector }}</strong> • ID: {{ c.id }}</p>
+        <div class="actions" style="margin-top:10px;">
+          <a class="btn secondary" href="/admin/companies/{{ c.id }}">Aç</a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if companies|length == 0 %}
+    <p class="small">Henüz firma yok.</p>
+  {% endif %}
+</div>
+{% endblock %}

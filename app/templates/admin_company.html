@@ -1,0 +1,52 @@
+{% extends "admin_base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Firma: {{ company.name }}</h2>
+  <p class="small">Sektör: <strong>{{ company.sector }}</strong> • ID: {{ company.id }}</p>
+
+  <hr>
+
+  <h3>Excel Yükle</h3>
+  <p class="small">
+    Excel sheet adları: <strong>BILANCO</strong> ve <strong>GELIR</strong>. A: kalem adı, B: tutar.
+  </p>
+
+  <form action="/admin/companies/{{ company.id }}/upload" method="post" enctype="multipart/form-data">
+    <div class="field">
+      <label>Dosya (xlsx)</label>
+      <input type="file" name="file" accept=".xlsx" required>
+    </div>
+    <div class="actions">
+      <button class="btn" type="submit">Yükle</button>
+      <a class="btn secondary" href="/admin">Geri</a>
+    </div>
+  </form>
+
+  <hr>
+
+  <h3>Yüklenenler</h3>
+  <ul class="list">
+    {% for u in uploads %}
+      <li>
+        {{ u.filename }} — {{ u.uploaded_at }}
+      </li>
+    {% endfor %}
+  </ul>
+  {% if uploads|length == 0 %}
+    <p class="small">Henüz dosya yok.</p>
+  {% endif %}
+
+  <hr>
+
+  <h3>Analiz</h3>
+  <p class="small">En son yüklenen excel üzerinden 10 maddelik çıkarım üretir.</p>
+
+  <form action="/admin/companies/{{ company.id }}/analyze" method="post">
+    <div class="actions">
+      <button class="btn" type="submit">Analiz Et</button>
+      <a class="btn secondary" href="/admin/companies/{{ company.id }}/analyses">Analiz Geçmişi</a>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "admin_base.html" %}
+{% block content %}
+<div class="card" style="max-width:520px; margin:0 auto;">
+  <h2>Admin Giriş</h2>
+  <p>Yalnızca yetkili kullanıcılar.</p>
+  <form action="/admin/login" method="post">
+    <div class="field">
+      <label>E-posta</label>
+      <input type="email" name="email" required placeholder="admin@...">
+    </div>
+    <div class="field" style="margin-top:10px;">
+      <label>Şifre</label>
+      <input type="password" name="password" required>
+    </div>
+    <div class="actions" style="margin-top:14px;">
+      <button class="btn" type="submit">Giriş Yap</button>
+      <a class="btn secondary" href="/">Siteye dön</a>
+    </div>
+    <p class="small" style="margin-top:10px;">
+      İlk kurulumda admin hesabı env üzerinden oluşturulacak.
+    </p>
+  </form>
+</div>
+{% endblock %}

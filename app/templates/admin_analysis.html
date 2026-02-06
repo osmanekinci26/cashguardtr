@@ -1,0 +1,23 @@
+{% extends "admin_base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Analiz Sonucu</h2>
+  <p class="small">Firma: <strong>{{ company.name }}</strong> • Sektör: <strong>{{ sector_label }}</strong></p>
+
+  <hr>
+
+  <h3>10 Maddede Çıkarım</h3>
+  <ul class="list">
+    {% for b in bullets %}
+      <li>{{ b }}</li>
+    {% endfor %}
+  </ul>
+
+  <hr>
+
+  <div class="actions">
+    <a class="btn secondary" href="/admin/companies/{{ company.id }}">Firmaya dön</a>
+    <a class="btn" href="/admin/analyses/{{ analysis_id }}/pdf">PDF indir</a>
+  </div>
+</div>
+{% endblock %}
