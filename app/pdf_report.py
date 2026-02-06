@@ -23,7 +23,10 @@ ACCENT = colors.HexColor("#7c3aed")
 
 
 def _register_fonts():
-    """Register a Unicode font so Turkish characters render correctly."""
+    """
+    Türkçe karakterler için Unicode font kaydı.
+    Render deploy'da font yoksa net hata verir.
+    """
     try:
         pdfmetrics.getFont("DejaVu")
         return
@@ -34,7 +37,12 @@ def _register_fonts():
     bold = FONT_DIR / "DejaVuSans-Bold.ttf"
 
     if not regular.exists():
-        raise FileNotFoundError(f"Font not found: {regular}")
+        raise FileNotFoundError(
+            f"Font not found: {regular}\n"
+            f"Beklenen klasör: {FONT_DIR}\n"
+            "Çözüm: DejaVuSans.ttf (ve tercihen DejaVuSans-Bold.ttf) dosyalarını "
+            "repo içinde app/assets/fonts/ altına koy ve push et."
+        )
 
     pdfmetrics.registerFont(TTFont("DejaVu", str(regular)))
 
@@ -46,7 +54,6 @@ def _register_fonts():
 
 
 def _wrap_text(c, text, max_width, font_name, font_size):
-    """Basic word-wrapping for ReportLab canvas. Returns list of lines."""
     words = str(text).split()
     lines = []
     line = ""
@@ -75,20 +82,17 @@ def build_pdf_report(payload: dict) -> bytes:
     c = canvas.Canvas(buf, pagesize=A4)
     width, height = A4
 
-    # --- Background ---
+    # Background
     c.setFillColor(BG)
     c.rect(0, 0, width, height, fill=1, stroke=0)
 
-    # Layout constants
     margin_x = 18 * mm
     top_y = height - 18 * mm
 
-    # =========================
-    # Header (logo left-top)
-    # =========================
+    # Header
     logo_size = 18 * mm
     logo_x = 6 * mm
-    logo_y = height - 6 * mm - logo_size  # top padding
+    logo_y = height - 6 * mm - logo_size
 
     if ICON_PATH.exists():
         c.drawImage(
@@ -111,7 +115,7 @@ def build_pdf_report(payload: dict) -> bytes:
     c.setFillColor(MUTED)
     c.drawString(title_x, height - 16 * mm, "Nakit Risk Taraması Raporu")
 
-    # ✅ NEW: Sector line (optional)
+    # Sector (optional)
     sector = (payload.get("sector") or "").strip()
     if sector:
         c.setFont("DejaVu", 10.5)
@@ -122,16 +126,11 @@ def build_pdf_report(payload: dict) -> bytes:
     c.setFillColor(MUTED)
     c.drawRightString(width - margin_x, height - 10 * mm, datetime.now().strftime("%d.%m.%Y %H:%M"))
 
-    # content y start
     y = top_y - 10 * mm
-
-    # Eğer sektör satırı yazıldıysa içerik yukarıdan biraz daha aşağı başlasın (çakışma olmasın)
     if sector:
         y -= 6 * mm
 
-    # =========================
-    # Summary Card
-    # =========================
+    # Summary card
     card_h = 28 * mm
     c.setFillColor(CARD)
     c.roundRect(margin_x, y - card_h, width - 2 * margin_x, card_h, 10, fill=1, stroke=0)
@@ -174,9 +173,7 @@ def build_pdf_report(payload: dict) -> bytes:
 
     y -= (card_h + 10 * mm)
 
-    # =========================
-    # Inputs Section (fix alignment)
-    # =========================
+    # Inputs
     c.setFillColor(TEXT)
     c.setFont("DejaVu-Bold", 13)
     c.drawString(margin_x, y, "Girilen Bilgiler")
@@ -195,7 +192,6 @@ def build_pdf_report(payload: dict) -> bytes:
         ("Hedge var mı", payload.get("hedging")),
     ]
 
-    # Two columns with fixed widths
     content_w = width - 2 * margin_x
     gap = 8 * mm
     col_w = (content_w - gap) / 2
@@ -230,9 +226,7 @@ def build_pdf_report(payload: dict) -> bytes:
 
     y -= 5 * row_h + 6 * mm
 
-    # =========================
-    # Messages / Recommendations (fix bullet alignment)
-    # =========================
+    # Messages
     if y < 70 * mm:
         c.showPage()
         width, height = A4
