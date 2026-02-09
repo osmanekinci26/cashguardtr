@@ -3,26 +3,47 @@ from __future__ import annotations
 from openpyxl import load_workbook
 from typing import Dict, Tuple, List, Optional, Any
 
-from app.fin_mapping import map_item_to_key
-
+from app.fin_mapping import map_item_to_key, normalize_text, explain_key
 
 # Beklenen sheet adları:
 SHEET_BS = "BILANCO"
 SHEET_IS = "GELIR"
 
 
+# =========================
+# Helpers
+# =========================
 def _as_float(v: Any) -> float:
+    """
+    Excel hücresinden güvenli float dönüşümü.
+    TR format: 1.234.567,89
+    Negatif: (1.234) veya -1.234
+    """
     try:
         if v is None:
             return 0.0
         if isinstance(v, (int, float)):
             return float(v)
+
         s = str(v).strip()
         if s == "":
             return 0.0
-        # TR format: 1.234.567,89
+
+        # Negatif parantez: (1.234,56)
+        neg = False
+        if s.startswith("(") and s.endswith(")"):
+            neg = True
+            s = s[1:-1].strip()
+
+        # bazı excel export: " - " / "—"
+        if s in {"-", "—", "–"}:
+            return 0.0
+
+        # TR format normalize
         s = s.replace(".", "").replace(",", ".")
-        return float(s)
+        x = float(s)
+
+        return -x if neg else x
     except Exception:
         return 0.0
 
@@ -38,7 +59,6 @@ def _find_kalem_headers(ws, max_scan_rows: int = 25) -> List[Tuple[int, int]]:
             v = ws.cell(r, c).value
             if isinstance(v, str) and v.strip().upper() == "KALEM":
                 headers.append((r, c))
-    # satır sırasına göre
     headers.sort(key=lambda x: (x[0], x[1]))
     return headers
 
@@ -47,15 +67,16 @@ def _year_cols_from_header(ws, header_row: int, kalem_col: int, max_years: int =
     """
     'KALEM' hücresinin sağındaki yıl kolonlarını bulur.
     Örn: KALEM | 2022 | % | 2023 -> [(2022, col+1), (2023, col+3)]
-    Not: Arada % gibi kolonlar olabiliyor. Bu yüzden sağa doğru tarayıp yıl yakalıyoruz.
+    Arada % gibi kolonlar olabiliyor.
     """
     out: List[Tuple[int, int]] = []
     scanned = 0
     c = kalem_col + 1
+
     while c <= ws.max_column and scanned < 25 and len(out) < max_years:
         v = ws.cell(header_row, c).value
-
         yr: Optional[int] = None
+
         if isinstance(v, int) and 1900 <= v <= 2200:
             yr = v
         elif isinstance(v, float) and 1900 <= int(v) <= 2200:
@@ -73,25 +94,21 @@ def _year_cols_from_header(ws, header_row: int, kalem_col: int, max_years: int =
         c += 1
         scanned += 1
 
-    # yıl kolonlarını yıla göre sırala
     out.sort(key=lambda x: x[0])
     return out
 
 
 def _is_noise_row(name: str) -> bool:
     """
-    Bilanço/Gelir tablolarında toplama/başlık satırlarını analize sokmayalım.
-    (İstersen burada daha da sıkılaştırırız.)
+    Başlık/alt başlık satırları.
+    Burayı çok agresif yaparsan oranlar bozulur.
     """
-    n = name.strip().upper()
-    if n in {"AKTIF", "PASIF"}:
-        return True
-    # Çok tipik başlık/toplam satırları
-    if "TOPLAM" in n and ("VARLIK" in n or "KAYNAK" in n or "AKTIF" in n or "PASIF" in n):
-        return True
-    if n.startswith("TOPLAM "):
+    n = str(name).strip().upper()
+    if n in {"AKTIF", "PASIF", "VARLIKLAR", "KAYNAKLAR"}:
         return True
     if n.startswith("GENEL TOPLAM"):
+        return True
+    if n == "TOPLAM":
         return True
     return False
 
@@ -102,41 +119,123 @@ def _block_rows(
     end_row: int,
     kalem_col: int,
     value_col: int,
+    stop_on_empty_streak: int = 25,
 ) -> List[Tuple[str, float]]:
     """
     Bir blok: (kalem_col -> kalem adı) ve (value_col -> tutar)
+    Excel'in aşağısındaki boş/çöp alanları okumamak için
+    ardışık boş satır sayısı belirli bir eşiği geçince durur.
     """
     items: List[Tuple[str, float]] = []
+    empty_streak = 0
+
     for r in range(start_row, min(end_row, ws.max_row) + 1):
         k = ws.cell(r, kalem_col).value
-        if k is None:
+
+        if k is None or str(k).strip() == "":
+            empty_streak += 1
+            if empty_streak >= stop_on_empty_streak:
+                break
             continue
 
+        empty_streak = 0
         name = str(k).strip()
-        if name == "":
-            continue
 
         if _is_noise_row(name):
             continue
 
         v = ws.cell(r, value_col).value
         items.append((name, _as_float(v)))
+
     return items
 
 
-def _items_to_canonical(items: List[Tuple[str, float]]) -> Dict[str, float]:
+# =========================
+# Mapping guard (TOTAL mis-map fix)
+# =========================
+TOTAL_KEYS = {
+    "current_assets_total",
+    "non_current_assets_total",
+    "total_assets",
+    "short_term_liabilities",
+    "long_term_liabilities",
+    "total_liabilities",
+    "equity_total",
+    "total_liabilities_and_equity",
+}
+
+def _is_totalish(norm_name: str) -> bool:
     """
-    Excel satır isimlerini fin_mapping üzerinden canonical key'lere çevirip toplar.
+    Satır gerçek bir toplam satırı mı?
+    En temel kural: 'toplam' kelimesi geçsin veya bilinen total ifadeler olsun.
+    """
+    n = norm_name
+    if "toplam" in n:
+        return True
+    # bazı şablonlarda toplam yazmadan "donen varliklar" tek başına total gibi kullanılır
+    if n in {
+        "donen varliklar",
+        "duran varliklar",
+        "kisa vadeli yukumlulukler",
+        "uzun vadeli yukumlulukler",
+        "ozkaynaklar",
+        "aktif toplami",
+        "pasif toplami",
+        "toplam varliklar",
+        "toplam kaynaklar",
+    }:
+        return True
+    return False
+
+
+def _safe_map_item_to_key(raw_name: str) -> Optional[str]:
+    """
+    fin_mapping içindeki contains-match'in yanlışlıkla TOTAL key üretmesini engeller.
+    Örn: 'diger donen varliklar' içinde 'donen varliklar' geçiyor diye
+         current_assets_total'a gitmesin.
+    """
+    norm = normalize_text(raw_name)
+    key = map_item_to_key(raw_name)
+
+    if not key:
+        return None
+
+    # total key geldiyse ama satır total değilse iptal et
+    if key in TOTAL_KEYS and not _is_totalish(norm):
+        return None
+
+    return key
+
+
+def _items_to_canonical(items: List[Tuple[str, float]]) -> Tuple[Dict[str, float], List[Dict[str, Any]]]:
+    """
+    Excel satır isimlerini canonical key'lere çevirip toplar.
+    Ek olarak mapping log döndürür (debug için).
     """
     out: Dict[str, float] = {}
+    log: List[Dict[str, Any]] = []
+
     for name, val in items:
-        key = map_item_to_key(name)
-        if not key:
-            continue
-        out[key] = out.get(key, 0.0) + float(val)
-    return out
+        n = normalize_text(name)
+        key = _safe_map_item_to_key(name)
+
+        if key:
+            out[key] = out.get(key, 0.0) + float(val)
+
+        log.append({
+            "raw": name,
+            "norm": n,
+            "key": key,
+            "key_label": explain_key(key) if key else None,
+            "value": float(val),
+        })
+
+    return out, log
 
 
+# =========================
+# Parse
+# =========================
 def parse_financials_xlsx(xlsx_path: str) -> dict:
     wb = load_workbook(xlsx_path, data_only=True)
 
@@ -180,35 +279,49 @@ def parse_financials_xlsx(xlsx_path: str) -> dict:
     if not is_headers:
         raise ValueError("GELIR sheet içinde 'KALEM' başlığı bulunamadı.")
 
-    # gelirde ilk header yeterli (genelde tek)
     hr, kc = is_headers[0]
     years = _year_cols_from_header(ws_is, hr, kc)
     if not years:
         raise ValueError("GELIR sheet'inde yıl kolonları bulunamadı (KALEM'in sağında 2022/2023 gibi).")
 
     is_year, vc = years[-1]
-    # gelir tablosunda bir sonraki KALEM varsa (nadiren), ona kadar keselim
     next_hr = is_headers[1][0] if len(is_headers) > 1 else ws_is.max_row + 1
     is_items = _block_rows(ws_is, start_row=hr + 1, end_row=next_hr - 1, kalem_col=kc, value_col=vc)
 
-    # canonical dönüşüm
-    bs_canon = _items_to_canonical(bs_items_all)
-    is_canon = _items_to_canonical(is_items)
+    # canonical dönüşüm + mapping log
+    bs_canon, bs_log = _items_to_canonical(bs_items_all)
+    is_canon, is_log = _items_to_canonical(is_items)
+
+    bs_unmapped = [x for x in bs_log if not x["key"]]
+    is_unmapped = [x for x in is_log if not x["key"]]
 
     return {
         "year_bs": bs_year,
         "year_is": is_year,
-        "balance_sheet_raw": bs_items_all,     # (satır adı, değer)
-        "income_statement_raw": is_items,      # (satır adı, değer)
-        "balance_sheet": bs_canon,             # canonical -> değer
-        "income_statement": is_canon,          # canonical -> değer
+
+        "balance_sheet_raw": bs_items_all,
+        "income_statement_raw": is_items,
+
+        "balance_sheet": bs_canon,
+        "income_statement": is_canon,
+
+        # Debug
+        "mapping_log": {
+            "balance_sheet": bs_log,
+            "income_statement": is_log,
+            "unmapped_balance_sheet": bs_unmapped,
+            "unmapped_income_statement": is_unmapped,
+        },
     }
 
 
+# =========================
+# Analyze
+# =========================
 def analyze_financials(fin: dict, sector: str) -> dict:
     """
     Sector: defense / construction / electrical / energy
-    10 madde üretir (explainable).
+    10 madde üretir.
     """
     bs = fin.get("balance_sheet", {}) or {}
     inc = fin.get("income_statement", {}) or {}
@@ -216,7 +329,7 @@ def analyze_financials(fin: dict, sector: str) -> dict:
     def g(d: Dict[str, float], key: str) -> float:
         return float(d.get(key, 0.0) or 0.0)
 
-    # --- Canonical'dan çek
+    # Canonical
     cash = g(bs, "cash_and_equivalents")
     ar = g(bs, "trade_receivables")
     inv = g(bs, "inventories")
@@ -235,7 +348,7 @@ def analyze_financials(fin: dict, sector: str) -> dict:
     fin_exp = g(inc, "finance_expense")
     interest_exp = g(inc, "interest_expense")
 
-    # --- Fallback: toplam kalem gelmediyse
+    # Fallback totals
     if ca <= 0:
         ca = (
             cash
@@ -255,21 +368,23 @@ def analyze_financials(fin: dict, sector: str) -> dict:
             + g(bs, "lease_liabilities_st")
         )
 
-    # --- Oranlar
+    # Ratios
     current_ratio = (ca / cl) if cl else None
     quick_ratio = ((ca - inv) / cl) if cl else None
     net_debt = (debt_st + debt_lt) - cash
-    debt_to_equity = ((debt_st + debt_lt) / equity) if equity else None
+
+    # equity 0/negatifse ratio anlamlı değil
+    debt_to_equity = ((debt_st + debt_lt) / equity) if equity and equity > 0 else None
 
     fin_cost = fin_exp if fin_exp else interest_exp
     interest_cover = (ebit / fin_cost) if fin_cost else None
     gross_margin = ((revenue - cogs) / revenue) if revenue else None
 
     sector_profiles = {
-        "defense": {"wc_risk": "medium", "margin_expect": "medium"},
-        "construction": {"wc_risk": "high", "margin_expect": "low"},
-        "electrical": {"wc_risk": "high", "margin_expect": "medium"},
-        "energy": {"wc_risk": "medium", "margin_expect": "low"},
+        "defense": {"wc_risk": "medium"},
+        "construction": {"wc_risk": "high"},
+        "electrical": {"wc_risk": "high"},
+        "energy": {"wc_risk": "medium"},
     }
     prof = sector_profiles.get(sector, sector_profiles["defense"])
 
@@ -297,7 +412,7 @@ def analyze_financials(fin: dict, sector: str) -> dict:
 
     # 4) Borç/Özkaynak
     if debt_to_equity is None:
-        bullets.append("Borç/Özkaynak hesaplanamadı (özkaynak bulunamadı).")
+        bullets.append("Borç/Özkaynak hesaplanamadı (özkaynak bulunamadı veya 0/negatif).")
     else:
         if debt_to_equity > 2.0:
             bullets.append(f"Borç/Özkaynak yüksek ({debt_to_equity:.2f}). Finansal kaldıraç riski artmış.")
@@ -369,4 +484,5 @@ def analyze_financials(fin: dict, sector: str) -> dict:
             "total_assets": total_assets,
         },
         "bullets": bullets[:10],
+        "mapping_log": fin.get("mapping_log", {}),
     }

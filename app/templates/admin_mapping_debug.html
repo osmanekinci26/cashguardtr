@@ -1,0 +1,143 @@
+{% extends "admin_base.html" %}
+{% block content %}
+
+<div class="card">
+  <h2>Mapping Debug</h2>
+
+  <p class="muted">
+    Firma: <strong>{{ company.name }}</strong> |
+    Kaynak: <strong>{{ source }}</strong> |
+    {% if source == "last_upload" %}
+      Upload: <strong>{{ upload_filename }}</strong>
+    {% else %}
+      Analysis ID: <strong>{{ analysis_id }}</strong>
+    {% endif %}
+    <br>
+    Upload path: <span class="muted">{{ upload_path or "-" }}</span><br>
+    Bilanço yılı: <strong>{{ year_bs or "-" }}</strong> |
+    Gelir yılı: <strong>{{ year_is or "-" }}</strong>
+  </p>
+
+  <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+    <a class="btn secondary" href="/admin/companies/{{ company.id }}">← Firma sayfasına dön</a>
+    {% if source == "last_upload" %}
+      <a class="btn secondary" href="/admin/companies/{{ company.id }}/mapping-debug">↻ Yenile (son upload)</a>
+    {% else %}
+      <a class="btn secondary" href="/admin/analyses/{{ analysis_id }}">← Analize dön</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card" style="margin-top:14px;">
+  <h3>⚠️ Bilanço — Map edilemeyen satırlar ({{ bs_unmapped|length }})</h3>
+  {% if bs_unmapped|length == 0 %}
+    <p class="muted">Hepsi map edilmiş görünüyor.</p>
+  {% else %}
+    <div style="overflow:auto; margin-top:8px;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Raw</th>
+            <th>Normalized</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in bs_unmapped %}
+          <tr>
+            <td>{{ r["raw"] }}</td>
+            <td class="muted">{{ r["norm"] }}</td>
+            <td>{{ "{:,.2f}".format(r["value"]) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>
+
+<div class="card" style="margin-top:14px;">
+  <h3>⚠️ Gelir — Map edilemeyen satırlar ({{ is_unmapped|length }})</h3>
+  {% if is_unmapped|length == 0 %}
+    <p class="muted">Hepsi map edilmiş görünüyor.</p>
+  {% else %}
+    <div style="overflow:auto; margin-top:8px;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Raw</th>
+            <th>Normalized</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in is_unmapped %}
+          <tr>
+            <td>{{ r["raw"] }}</td>
+            <td class="muted">{{ r["norm"] }}</td>
+            <td>{{ "{:,.2f}".format(r["value"]) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+</div>
+
+<div class="card" style="margin-top:14px;">
+  <h3>✅ Bilanço — Tüm mapping log ({{ bs_log|length }})</h3>
+  <div style="overflow:auto; margin-top:8px;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Raw</th>
+          <th>Normalized</th>
+          <th>Key</th>
+          <th>Key Label</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in bs_log %}
+        <tr>
+          <td>{{ r["raw"] }}</td>
+          <td class="muted">{{ r["norm"] }}</td>
+          <td><code>{{ r["key"] }}</code></td>
+          <td class="muted">{{ r["key_label"] }}</td>
+          <td>{{ "{:,.2f}".format(r["value"]) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-top:14px;">
+  <h3>✅ Gelir — Tüm mapping log ({{ is_log|length }})</h3>
+  <div style="overflow:auto; margin-top:8px;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Raw</th>
+          <th>Normalized</th>
+          <th>Key</th>
+          <th>Key Label</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in is_log %}
+        <tr>
+          <td>{{ r["raw"] }}</td>
+          <td class="muted">{{ r["norm"] }}</td>
+          <td><code>{{ r["key"] }}</code></td>
+          <td class="muted">{{ r["key_label"] }}</td>
+          <td>{{ "{:,.2f}".format(r["value"]) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

@@ -50,7 +50,7 @@ def _sanitize_sector(sector: str | None) -> str:
 
 
 # =========================
-# PUBLIC ROUTES (senin mevcutların)
+# PUBLIC ROUTES
 # =========================
 @app.get("/", response_class=HTMLResponse)
 def landing(request: Request):
@@ -326,7 +326,7 @@ def admin_company_create(
     db: Session = Depends(get_db),
 ):
     try:
-        email = require_admin(request, db)
+        _ = require_admin(request, db)
     except PermissionError:
         return RedirectResponse(url="/admin", status_code=302)
 
@@ -476,3 +476,91 @@ def admin_analysis_pdf(request: Request, analysis_id: int, db: Session = Depends
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# =========================
+# ✅ NEW: MAPPING DEBUG ROUTES
+# =========================
+@app.get("/admin/companies/{company_id}/mapping-debug", response_class=HTMLResponse)
+def admin_company_mapping_debug(request: Request, company_id: int, db: Session = Depends(get_db)):
+    """
+    Son yüklenen Excel üzerinden parse_financials_xlsx çalıştırır ve mapping log'u gösterir.
+    """
+    try:
+        email = require_admin(request, db)
+    except PermissionError:
+        return RedirectResponse(url="/admin", status_code=302)
+
+    company = db.query(Company).filter(Company.id == company_id).first()
+    if not company:
+        return RedirectResponse(url="/admin", status_code=302)
+
+    last_upload = (
+        db.query(Upload)
+        .filter(Upload.company_id == company_id, Upload.kind == "excel")
+        .order_by(Upload.uploaded_at.desc())
+        .first()
+    )
+    if not last_upload:
+        ctx = _admin_ctx(request, "Mapping Debug | Admin", admin_email=email, error="Bu firmaya ait Excel upload bulunamadı.")
+        return templates.TemplateResponse("admin_company.html", ctx)
+
+    try:
+        fin = parse_financials_xlsx(last_upload.path)
+        mlog = fin.get("mapping_log", {}) or {}
+    except Exception as e:
+        ctx = _admin_ctx(request, "Mapping Debug | Admin", admin_email=email, error=str(e))
+        ctx.update({"company": company})
+        return templates.TemplateResponse("admin_mapping_debug.html", ctx)
+
+    ctx = _admin_ctx(request, "Mapping Debug | Admin", admin_email=email)
+    ctx.update({
+        "company": company,
+        "source": "last_upload",
+        "upload_filename": last_upload.filename,
+        "upload_path": last_upload.path,
+
+        "bs_log": mlog.get("balance_sheet", []),
+        "is_log": mlog.get("income_statement", []),
+        "bs_unmapped": mlog.get("unmapped_balance_sheet", []),
+        "is_unmapped": mlog.get("unmapped_income_statement", []),
+
+        "year_bs": fin.get("year_bs"),
+        "year_is": fin.get("year_is"),
+    })
+    return templates.TemplateResponse("admin_mapping_debug.html", ctx)
+
+
+@app.get("/admin/analyses/{analysis_id}/mapping-debug", response_class=HTMLResponse)
+def admin_analysis_mapping_debug(request: Request, analysis_id: int, db: Session = Depends(get_db)):
+    """
+    Kayıtlı Analysis.result_json içindeki mapping_log'u gösterir.
+    """
+    try:
+        email = require_admin(request, db)
+    except PermissionError:
+        return RedirectResponse(url="/admin", status_code=302)
+
+    analysis = db.query(Analysis).filter(Analysis.id == analysis_id).first()
+    if not analysis:
+        return RedirectResponse(url="/admin", status_code=302)
+
+    company = db.query(Company).filter(Company.id == analysis.company_id).first()
+    data = json.loads(analysis.result_json)
+    mlog = (data.get("mapping_log") or {})
+
+    ctx = _admin_ctx(request, "Mapping Debug | Admin", admin_email=email)
+    ctx.update({
+        "company": company,
+        "source": "analysis",
+        "analysis_id": analysis.id,
+
+        "bs_log": mlog.get("balance_sheet", []),
+        "is_log": mlog.get("income_statement", []),
+        "bs_unmapped": mlog.get("unmapped_balance_sheet", []),
+        "is_unmapped": mlog.get("unmapped_income_statement", []),
+
+        "year_bs": (data.get("meta") or {}).get("year_bs"),
+        "year_is": (data.get("meta") or {}).get("year_is"),
+    })
+    return templates.TemplateResponse("admin_mapping_debug.html", ctx)
