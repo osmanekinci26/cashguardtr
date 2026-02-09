@@ -5,6 +5,7 @@ from typing import Dict, Tuple, List, Optional, Any
 
 from app.fin_mapping import map_item_to_key
 
+
 # Beklenen sheet adları:
 SHEET_BS = "BILANCO"
 SHEET_IS = "GELIR"
@@ -19,58 +20,105 @@ def _as_float(v: Any) -> float:
         s = str(v).strip()
         if s == "":
             return 0.0
-        # TR format (1.234.567,89) gelirse:
+        # TR format: 1.234.567,89
         s = s.replace(".", "").replace(",", ".")
         return float(s)
     except Exception:
         return 0.0
 
 
-def _find_kalem_headers(ws, max_scan_rows: int = 15) -> List[Tuple[int, int]]:
+def _find_kalem_headers(ws, max_scan_rows: int = 25) -> List[Tuple[int, int]]:
     """
     Sheet içinde 'KALEM' yazan hücreleri bulur.
     Bilanço sheet'inde genelde 2 tane olur (AKTİF / PASİF blokları).
     """
-    headers = []
+    headers: List[Tuple[int, int]] = []
     for r in range(1, min(ws.max_row, max_scan_rows) + 1):
         for c in range(1, ws.max_column + 1):
             v = ws.cell(r, c).value
             if isinstance(v, str) and v.strip().upper() == "KALEM":
                 headers.append((r, c))
+    # satır sırasına göre
+    headers.sort(key=lambda x: (x[0], x[1]))
     return headers
 
 
-def _year_cols_from_header(ws, header_row: int, kalem_col: int, max_years: int = 6) -> List[Tuple[int, int]]:
+def _year_cols_from_header(ws, header_row: int, kalem_col: int, max_years: int = 10) -> List[Tuple[int, int]]:
     """
     'KALEM' hücresinin sağındaki yıl kolonlarını bulur.
-    Örn: KALEM | 2024 | 2025  -> [(2024, col+1), (2025, col+2)]
+    Örn: KALEM | 2022 | % | 2023 -> [(2022, col+1), (2023, col+3)]
+    Not: Arada % gibi kolonlar olabiliyor. Bu yüzden sağa doğru tarayıp yıl yakalıyoruz.
     """
-    out = []
-    for i in range(1, max_years + 1):
-        c = kalem_col + i
+    out: List[Tuple[int, int]] = []
+    scanned = 0
+    c = kalem_col + 1
+    while c <= ws.max_column and scanned < 25 and len(out) < max_years:
         v = ws.cell(header_row, c).value
+
+        yr: Optional[int] = None
         if isinstance(v, int) and 1900 <= v <= 2200:
-            out.append((v, c))
+            yr = v
         elif isinstance(v, float) and 1900 <= int(v) <= 2200:
-            out.append((int(v), c))
-        else:
-            # yıl zinciri bozulduysa dur
-            break
+            yr = int(v)
+        elif isinstance(v, str):
+            vv = v.strip()
+            if vv.isdigit():
+                iv = int(vv)
+                if 1900 <= iv <= 2200:
+                    yr = iv
+
+        if yr is not None:
+            out.append((yr, c))
+
+        c += 1
+        scanned += 1
+
+    # yıl kolonlarını yıla göre sırala
+    out.sort(key=lambda x: x[0])
     return out
 
 
-def _block_rows(ws, start_row: int, kalem_col: int, value_col: int) -> List[Tuple[str, float]]:
+def _is_noise_row(name: str) -> bool:
+    """
+    Bilanço/Gelir tablolarında toplama/başlık satırlarını analize sokmayalım.
+    (İstersen burada daha da sıkılaştırırız.)
+    """
+    n = name.strip().upper()
+    if n in {"AKTIF", "PASIF"}:
+        return True
+    # Çok tipik başlık/toplam satırları
+    if "TOPLAM" in n and ("VARLIK" in n or "KAYNAK" in n or "AKTIF" in n or "PASIF" in n):
+        return True
+    if n.startswith("TOPLAM "):
+        return True
+    if n.startswith("GENEL TOPLAM"):
+        return True
+    return False
+
+
+def _block_rows(
+    ws,
+    start_row: int,
+    end_row: int,
+    kalem_col: int,
+    value_col: int,
+) -> List[Tuple[str, float]]:
     """
     Bir blok: (kalem_col -> kalem adı) ve (value_col -> tutar)
     """
     items: List[Tuple[str, float]] = []
-    for r in range(start_row, ws.max_row + 1):
+    for r in range(start_row, min(end_row, ws.max_row) + 1):
         k = ws.cell(r, kalem_col).value
         if k is None:
             continue
+
         name = str(k).strip()
         if name == "":
             continue
+
+        if _is_noise_row(name):
+            continue
+
         v = ws.cell(r, value_col).value
         items.append((name, _as_float(v)))
     return items
@@ -98,55 +146,62 @@ def parse_financials_xlsx(xlsx_path: str) -> dict:
     ws_bs = wb[SHEET_BS]
     ws_is = wb[SHEET_IS]
 
-    # --- BILANCO: KALEM başlıklarını bul (genelde 2 adet: AKTIF ve PASIF)
+    # ========== BILANCO ==========
     bs_headers = _find_kalem_headers(ws_bs)
     if not bs_headers:
         raise ValueError("BILANCO sheet içinde 'KALEM' başlığı bulunamadı.")
 
-    # her header için yıl kolonlarını bul, en büyük yılı seç
-    bs_blocks: List[List[Tuple[str, float]]] = []
     bs_years_found: List[int] = []
+    bs_items_all: List[Tuple[str, float]] = []
 
-    for (hr, kc) in bs_headers:
+    # Header’ları bloklara böl: her KALEM, bir sonraki KALEM’e kadar
+    for idx, (hr, kc) in enumerate(bs_headers):
+        next_hr = bs_headers[idx + 1][0] if idx + 1 < len(bs_headers) else ws_bs.max_row + 1
+        end_row = next_hr - 1
+
         years = _year_cols_from_header(ws_bs, hr, kc)
         if not years:
             continue
-        # en güncel yıl
-        year, vc = sorted(years, key=lambda x: x[0])[-1]
-        bs_years_found.append(year)
-        items = _block_rows(ws_bs, start_row=hr + 1, kalem_col=kc, value_col=vc)
-        bs_blocks.append(items)
 
-    if not bs_blocks:
-        raise ValueError("BILANCO sheet'inde yıl kolonları bulunamadı (KALEM'in sağında 2024/2025 gibi).")
+        # en güncel yıl ve kolon
+        year, vc = years[-1]
+        bs_years_found.append(year)
+
+        items = _block_rows(ws_bs, start_row=hr + 1, end_row=end_row, kalem_col=kc, value_col=vc)
+        bs_items_all.extend(items)
+
+    if not bs_items_all:
+        raise ValueError("BILANCO sheet'inde okunabilir satır bulunamadı (KALEM blokları boş görünüyor).")
 
     bs_year = max(bs_years_found) if bs_years_found else None
-    bs_items = [it for block in bs_blocks for it in block]
 
-    # --- GELIR: tek KALEM başlığı bekliyoruz
+    # ========== GELIR ==========
     is_headers = _find_kalem_headers(ws_is)
     if not is_headers:
         raise ValueError("GELIR sheet içinde 'KALEM' başlığı bulunamadı.")
 
+    # gelirde ilk header yeterli (genelde tek)
     hr, kc = is_headers[0]
     years = _year_cols_from_header(ws_is, hr, kc)
     if not years:
-        raise ValueError("GELIR sheet'inde yıl kolonları bulunamadı (KALEM'in sağında 2024/2025 gibi).")
+        raise ValueError("GELIR sheet'inde yıl kolonları bulunamadı (KALEM'in sağında 2022/2023 gibi).")
 
-    is_year, vc = sorted(years, key=lambda x: x[0])[-1]
-    is_items = _block_rows(ws_is, start_row=hr + 1, kalem_col=kc, value_col=vc)
+    is_year, vc = years[-1]
+    # gelir tablosunda bir sonraki KALEM varsa (nadiren), ona kadar keselim
+    next_hr = is_headers[1][0] if len(is_headers) > 1 else ws_is.max_row + 1
+    is_items = _block_rows(ws_is, start_row=hr + 1, end_row=next_hr - 1, kalem_col=kc, value_col=vc)
 
     # canonical dönüşüm
-    bs_canon = _items_to_canonical(bs_items)
+    bs_canon = _items_to_canonical(bs_items_all)
     is_canon = _items_to_canonical(is_items)
 
     return {
         "year_bs": bs_year,
         "year_is": is_year,
-        "balance_sheet_raw": bs_items,        # (satır adı, değer)
-        "income_statement_raw": is_items,     # (satır adı, değer)
-        "balance_sheet": bs_canon,            # canonical -> değer
-        "income_statement": is_canon,         # canonical -> değer
+        "balance_sheet_raw": bs_items_all,     # (satır adı, değer)
+        "income_statement_raw": is_items,      # (satır adı, değer)
+        "balance_sheet": bs_canon,             # canonical -> değer
+        "income_statement": is_canon,          # canonical -> değer
     }
 
 
@@ -168,6 +223,7 @@ def analyze_financials(fin: dict, sector: str) -> dict:
 
     ca = g(bs, "current_assets_total")
     cl = g(bs, "short_term_liabilities")
+
     debt_st = g(bs, "short_term_fin_debt")
     debt_lt = g(bs, "long_term_fin_debt")
     equity = g(bs, "equity_total")
@@ -179,12 +235,25 @@ def analyze_financials(fin: dict, sector: str) -> dict:
     fin_exp = g(inc, "finance_expense")
     interest_exp = g(inc, "interest_expense")
 
-    # --- Fallback: toplam kalem gelmediyse (bazı Excel’lerde toplam satır yok)
+    # --- Fallback: toplam kalem gelmediyse
     if ca <= 0:
-        ca = cash + ar + inv + g(bs, "other_current_assets") + g(bs, "other_receivables") + g(bs, "prepaid_expenses")
+        ca = (
+            cash
+            + ar
+            + inv
+            + g(bs, "other_current_assets")
+            + g(bs, "other_receivables")
+            + g(bs, "prepaid_expenses")
+        )
+
     if cl <= 0:
-        # kısa vadeli yükümlülükler toplamı yoksa: ticari borç + KV finansal + vergi + karşılık + kiralama vb.
-        cl = g(bs, "trade_payables") + debt_st + g(bs, "tax_liabilities") + g(bs, "provisions_st") + g(bs, "lease_liabilities_st")
+        cl = (
+            g(bs, "trade_payables")
+            + debt_st
+            + g(bs, "tax_liabilities")
+            + g(bs, "provisions_st")
+            + g(bs, "lease_liabilities_st")
+        )
 
     # --- Oranlar
     current_ratio = (ca / cl) if cl else None
@@ -192,7 +261,6 @@ def analyze_financials(fin: dict, sector: str) -> dict:
     net_debt = (debt_st + debt_lt) - cash
     debt_to_equity = ((debt_st + debt_lt) / equity) if equity else None
 
-    # faiz karşılama: önce finance_expense, yoksa interest_expense
     fin_cost = fin_exp if fin_exp else interest_exp
     interest_cover = (ebit / fin_cost) if fin_cost else None
     gross_margin = ((revenue - cogs) / revenue) if revenue else None
@@ -205,7 +273,7 @@ def analyze_financials(fin: dict, sector: str) -> dict:
     }
     prof = sector_profiles.get(sector, sector_profiles["defense"])
 
-    bullets = []
+    bullets: List[str] = []
 
     # 1) Likidite
     if current_ratio is None:
