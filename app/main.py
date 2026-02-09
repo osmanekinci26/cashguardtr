@@ -219,6 +219,11 @@ def contact(request: Request):
     ctx = _common_ctx(request, "İletişim | CashGuard TR")
     return templates.TemplateResponse("contact.html", ctx)
 
+@app.get("/why-cash", response_class=HTMLResponse)
+def why_cash(request: Request):
+    ctx = _common_ctx(request, "Nakit Neden Korunmalı? | CashGuard TR")
+    return templates.TemplateResponse("why_cash.html", ctx)
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
