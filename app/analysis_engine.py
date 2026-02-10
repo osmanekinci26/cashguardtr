@@ -1,58 +1,291 @@
 from __future__ import annotations
 
-from openpyxl import load_workbook
+from dataclasses import dataclass
 from typing import Dict, Tuple, List, Optional, Any
+
+from openpyxl import load_workbook
 
 from app.fin_mapping import map_item_to_key, normalize_text, explain_key
 
-# Beklenen sheet adları:
+# Eski şema (geriye uyum)
 SHEET_BS = "BILANCO"
 SHEET_IS = "GELIR"
 
 
-# =========================
-# Helpers
-# =========================
 def _as_float(v: Any) -> float:
-    """
-    Excel hücresinden güvenli float dönüşümü.
-    TR format: 1.234.567,89
-    Negatif: (1.234) veya -1.234
-    """
     try:
         if v is None:
             return 0.0
         if isinstance(v, (int, float)):
             return float(v)
-
         s = str(v).strip()
         if s == "":
             return 0.0
-
-        # Negatif parantez: (1.234,56)
-        neg = False
-        if s.startswith("(") and s.endswith(")"):
-            neg = True
-            s = s[1:-1].strip()
-
-        # bazı excel export: " - " / "—"
-        if s in {"-", "—", "–"}:
-            return 0.0
-
-        # TR format normalize
+        # TR format: 1.234.567,89
         s = s.replace(".", "").replace(",", ".")
-        x = float(s)
-
-        return -x if neg else x
+        return float(s)
     except Exception:
         return 0.0
 
 
+# ============================================================
+# 1) MİZAN / TRIAL BALANCE PARSER (KODA DAYALI, TASARIM-BAĞIMSIZ)
+# ============================================================
+
+@dataclass
+class TBRow:
+    code: str
+    name: str
+    balance: float  # signed: asset +, liability/equity -, revenue -, expense +
+
+
+def _looks_like_trial_balance(ws) -> bool:
+    # Header satırında "Hesap Kodu" vb arıyoruz
+    for r in range(1, min(ws.max_row, 30) + 1):
+        row = [ws.cell(r, c).value for c in range(1, min(ws.max_column, 15) + 1)]
+        norm = " ".join(normalize_text(x) for x in row if x is not None)
+        if "hesap kodu" in norm and ("bakiye" in norm or "borc" in norm or "alacak" in norm):
+            return True
+    return False
+
+
+def _find_tb_header(ws) -> Tuple[int, Dict[str, int]]:
+    """
+    Trial balance sheet'inde header satırını ve kolon index'lerini bulur.
+    Beklenen başlık örnekleri:
+      Hesap Kodu | Hesap Adı | Bakiye
+      Hesap Kodu | Hesap Adı | Bakiye Borç | Bakiye Alacak | Bakiye
+    """
+    header_row = None
+    headers: Dict[str, int] = {}
+
+    def norm_cell(x: Any) -> str:
+        return normalize_text(x)
+
+    for r in range(1, min(ws.max_row, 40) + 1):
+        row = [ws.cell(r, c).value for c in range(1, min(ws.max_column, 25) + 1)]
+        normed = [norm_cell(x) for x in row]
+
+        # Hesap kodu + hesap adı şart
+        if any(x == "hesap kodu" for x in normed) and any(x in {"hesap adi", "hesap adı"} or "hesap ad" in x for x in normed):
+            header_row = r
+            # kolonları eşle
+            for idx, h in enumerate(normed, start=1):
+                if h == "hesap kodu":
+                    headers["code"] = idx
+                elif h in {"hesap adi", "hesap adı"} or "hesap ad" in h:
+                    headers["name"] = idx
+                elif h == "bakiye":
+                    headers["balance"] = idx
+                elif h == "bakiye borc" or h == "bakiye borç":
+                    headers["bal_debit"] = idx
+                elif h == "bakiye alacak":
+                    headers["bal_credit"] = idx
+            break
+
+    if not header_row or "code" not in headers:
+        raise ValueError("Mizan sheet'inde header bulunamadı (Hesap Kodu...).")
+
+    # balance yoksa debit-credit'ten üretiriz
+    if "balance" not in headers and ("bal_debit" not in headers or "bal_credit" not in headers):
+        raise ValueError("Mizan sheet'inde 'Bakiye' veya 'Bakiye Borç/Alacak' kolonları bulunamadı.")
+
+    if "name" not in headers:
+        headers["name"] = headers["code"] + 1  # fallback
+
+    return header_row, headers
+
+
+def _parse_trial_balance_sheet(ws) -> List[TBRow]:
+    header_row, col = _find_tb_header(ws)
+    out: List[TBRow] = []
+
+    for r in range(header_row + 1, ws.max_row + 1):
+        raw_code = ws.cell(r, col["code"]).value
+        if raw_code is None:
+            continue
+        code = str(raw_code).strip()
+        if code == "":
+            continue
+
+        # Bazı mizanda grup satırları: "10." gibi gelir -> bunu da alabiliriz ama toplamda çifte sayma riskli
+        # Bu yüzden sadece 3 haneli ve üstü (100, 102, 320, 600...) hesapları alalım:
+        code_digits = "".join(ch for ch in code if ch.isdigit())
+        if len(code_digits) < 3:
+            continue
+        code = code_digits
+
+        name = str(ws.cell(r, col["name"]).value or "").strip()
+
+        if "balance" in col:
+            bal = _as_float(ws.cell(r, col["balance"]).value)
+        else:
+            bal_deb = _as_float(ws.cell(r, col["bal_debit"]).value)
+            bal_cred = _as_float(ws.cell(r, col["bal_credit"]).value)
+            bal = bal_deb - bal_cred
+
+        # 0 bakiyeleri atla
+        if abs(bal) < 1e-6:
+            continue
+
+        out.append(TBRow(code=code, name=name, balance=float(bal)))
+
+    return out
+
+
+def _pick_trial_balance_ws(wb) -> Optional[Any]:
+    # Önce sheet adından yakala
+    for nm in wb.sheetnames:
+        n = normalize_text(nm)
+        if "mizan" in n:
+            ws = wb[nm]
+            if _looks_like_trial_balance(ws):
+                return ws
+    # Sonra içerikten yakala
+    for nm in wb.sheetnames:
+        ws = wb[nm]
+        if _looks_like_trial_balance(ws):
+            return ws
+    return None
+
+
+def _sum_prefix(rows: List[TBRow], prefixes: List[str]) -> float:
+    s = 0.0
+    for row in rows:
+        for p in prefixes:
+            if row.code.startswith(p):
+                s += row.balance
+                break
+    return s
+
+
+def _sum_range_prefix(rows: List[TBRow], start_prefix: str, end_prefix: str) -> float:
+    # string compare yerine integer compare
+    s = 0.0
+    a = int(start_prefix)
+    b = int(end_prefix)
+    for row in rows:
+        try:
+            c = int(row.code[:len(start_prefix)])
+        except Exception:
+            continue
+        if a <= c <= b:
+            s += row.balance
+    return s
+
+
+def _trial_balance_to_canonical(rows: List[TBRow]) -> Dict[str, float]:
+    """
+    Tek Düzen kodlarına göre canonical BS/IS üretir.
+    Sign normalization:
+      - Assets (+) 그대로
+      - Liabilities/Equity (-) -> pozitif yapmak için - ile çevir
+    """
+    bs: Dict[str, float] = {}
+
+    # Dönen varlıklar (1xx)
+    cash = _sum_prefix(rows, ["100", "101", "102", "108"]) + _sum_prefix(rows, ["103"])  # 103 genelde (-) çıkar, mizanda negatif olabilir
+    trade_ar = _sum_prefix(rows, ["120", "121", "122", "126", "127", "128", "129"])
+    other_ar = _sum_prefix(rows, ["131", "132", "133", "135", "136", "137", "138", "139"])
+    inv = _sum_prefix(rows, ["150", "151", "152", "153", "157", "158", "170", "171", "172", "173", "178", "179", "159"])
+    prepaid = _sum_prefix(rows, ["180"])
+    other_ca = _sum_prefix(rows, ["190", "191", "192", "193", "195", "196", "197", "198", "199"])
+
+    current_assets = _sum_prefix(rows, ["1"])  # tüm 1xx (signed +)
+    non_current_assets = _sum_prefix(rows, ["2"])
+    total_assets = current_assets + non_current_assets
+
+    # KVYK: 3xx (mizanda negatif -> pozitif yapmak için -)
+    cl_signed = _sum_prefix(rows, ["3"])
+    current_liabilities = -cl_signed
+
+    # UVYK: 4xx
+    ll_signed = _sum_prefix(rows, ["4"])
+    long_liabilities = -ll_signed
+
+    # Finansal borçlar (KV: 30x, UV: 40x)
+    st_fin_debt = -_sum_prefix(rows, ["300", "301", "303", "304", "305", "306", "309"])
+    lt_fin_debt = -_sum_prefix(rows, ["400", "401", "405", "407", "409"])
+
+    # Ticari borçlar
+    trade_payables = -_sum_prefix(rows, ["320", "321", "322", "326", "329"])
+
+    # Vergi+SGK vb
+    tax_liab = -_sum_prefix(rows, ["360", "361", "368", "369", "391", "392"])
+
+    # Özkaynak: 5xx (mizanda negatif -> pozitif)
+    equity = -_sum_prefix(rows, ["5"])
+
+    bs["cash_and_equivalents"] = cash
+    bs["trade_receivables"] = trade_ar
+    bs["other_receivables"] = other_ar
+    bs["inventories"] = inv
+    bs["prepaid_expenses"] = prepaid
+    bs["other_current_assets"] = other_ca
+    bs["current_assets_total"] = current_assets
+
+    bs["non_current_assets_total"] = non_current_assets
+    bs["total_assets"] = total_assets
+
+    bs["short_term_liabilities"] = current_liabilities
+    bs["long_term_liabilities"] = long_liabilities
+
+    bs["short_term_fin_debt"] = st_fin_debt
+    bs["long_term_fin_debt"] = lt_fin_debt
+    bs["trade_payables"] = trade_payables
+    bs["tax_liabilities"] = tax_liab
+
+    bs["equity_total"] = equity
+    bs["total_liabilities"] = current_liabilities + long_liabilities
+
+    return bs
+
+
+def _trial_balance_to_income_statement(rows: List[TBRow]) -> Dict[str, float]:
+    """
+    Mizan’dan P&L üretimi (gelir tablosu sheet’i yoksa fallback).
+    Tek Düzen:
+      60 Brüt satışlar (credit -> negative) => revenue positive = -sum(60x)
+      61 Satış indirimleri (debit) => discounts positive
+      62 COGS (debit) => positive
+      63 Opex (debit) => positive
+      64 Other op income (credit) => positive = -sum(64x)
+      65 Other op expense (debit) => positive
+      66 Finance expense (debit) => positive
+    """
+    inc: Dict[str, float] = {}
+
+    gross_sales = -_sum_prefix(rows, ["60"])
+    discounts = _sum_prefix(rows, ["61"])  # debit +
+    revenue_net = gross_sales - discounts
+
+    cogs = _sum_prefix(rows, ["62"])
+    opex = _sum_prefix(rows, ["63"])
+
+    other_op_income = -_sum_prefix(rows, ["64"])
+    other_op_exp = _sum_prefix(rows, ["65"])
+
+    fin_exp = _sum_prefix(rows, ["66"])
+
+    gross_profit = revenue_net - cogs
+    ebit = gross_profit - opex + other_op_income - other_op_exp
+
+    inc["revenue"] = revenue_net
+    inc["cogs"] = cogs
+    inc["gross_profit"] = gross_profit
+    inc["opex"] = opex
+    inc["ebit"] = ebit
+    inc["finance_expense"] = fin_exp
+    inc["interest_expense"] = 0.0  # alt kırılım yoksa 0 bırak
+
+    return inc
+
+
+# ============================================================
+# 2) ESKİ PARSER (BILANCO/GELIR) - GERİYE UYUMLU KALSIN
+# ============================================================
+
 def _find_kalem_headers(ws, max_scan_rows: int = 25) -> List[Tuple[int, int]]:
-    """
-    Sheet içinde 'KALEM' yazan hücreleri bulur.
-    Bilanço sheet'inde genelde 2 tane olur (AKTİF / PASİF blokları).
-    """
     headers: List[Tuple[int, int]] = []
     for r in range(1, min(ws.max_row, max_scan_rows) + 1):
         for c in range(1, ws.max_column + 1):
@@ -64,19 +297,12 @@ def _find_kalem_headers(ws, max_scan_rows: int = 25) -> List[Tuple[int, int]]:
 
 
 def _year_cols_from_header(ws, header_row: int, kalem_col: int, max_years: int = 10) -> List[Tuple[int, int]]:
-    """
-    'KALEM' hücresinin sağındaki yıl kolonlarını bulur.
-    Örn: KALEM | 2022 | % | 2023 -> [(2022, col+1), (2023, col+3)]
-    Arada % gibi kolonlar olabiliyor.
-    """
     out: List[Tuple[int, int]] = []
     scanned = 0
     c = kalem_col + 1
-
     while c <= ws.max_column and scanned < 25 and len(out) < max_years:
         v = ws.cell(header_row, c).value
         yr: Optional[int] = None
-
         if isinstance(v, int) and 1900 <= v <= 2200:
             yr = v
         elif isinstance(v, float) and 1900 <= int(v) <= 2200:
@@ -87,22 +313,15 @@ def _year_cols_from_header(ws, header_row: int, kalem_col: int, max_years: int =
                 iv = int(vv)
                 if 1900 <= iv <= 2200:
                     yr = iv
-
         if yr is not None:
             out.append((yr, c))
-
         c += 1
         scanned += 1
-
     out.sort(key=lambda x: x[0])
     return out
 
 
 def _is_noise_row(name: str) -> bool:
-    """
-    Başlık/alt başlık satırları.
-    Burayı çok agresif yaparsan oranlar bozulur.
-    """
     n = str(name).strip().upper()
     if n in {"AKTIF", "PASIF", "VARLIKLAR", "KAYNAKLAR"}:
         return True
@@ -113,115 +332,30 @@ def _is_noise_row(name: str) -> bool:
     return False
 
 
-def _block_rows(
-    ws,
-    start_row: int,
-    end_row: int,
-    kalem_col: int,
-    value_col: int,
-    stop_on_empty_streak: int = 25,
-) -> List[Tuple[str, float]]:
-    """
-    Bir blok: (kalem_col -> kalem adı) ve (value_col -> tutar)
-    Excel'in aşağısındaki boş/çöp alanları okumamak için
-    ardışık boş satır sayısı belirli bir eşiği geçince durur.
-    """
+def _block_rows(ws, start_row: int, end_row: int, kalem_col: int, value_col: int) -> List[Tuple[str, float]]:
     items: List[Tuple[str, float]] = []
-    empty_streak = 0
-
     for r in range(start_row, min(end_row, ws.max_row) + 1):
         k = ws.cell(r, kalem_col).value
-
-        if k is None or str(k).strip() == "":
-            empty_streak += 1
-            if empty_streak >= stop_on_empty_streak:
-                break
+        if k is None:
             continue
-
-        empty_streak = 0
         name = str(k).strip()
-
+        if not name:
+            continue
         if _is_noise_row(name):
             continue
-
         v = ws.cell(r, value_col).value
         items.append((name, _as_float(v)))
-
     return items
 
 
-# =========================
-# Mapping guard (TOTAL mis-map fix)
-# =========================
-TOTAL_KEYS = {
-    "current_assets_total",
-    "non_current_assets_total",
-    "total_assets",
-    "short_term_liabilities",
-    "long_term_liabilities",
-    "total_liabilities",
-    "equity_total",
-    "total_liabilities_and_equity",
-}
-
-def _is_totalish(norm_name: str) -> bool:
-    """
-    Satır gerçek bir toplam satırı mı?
-    En temel kural: 'toplam' kelimesi geçsin veya bilinen total ifadeler olsun.
-    """
-    n = norm_name
-    if "toplam" in n:
-        return True
-    # bazı şablonlarda toplam yazmadan "donen varliklar" tek başına total gibi kullanılır
-    if n in {
-        "donen varliklar",
-        "duran varliklar",
-        "kisa vadeli yukumlulukler",
-        "uzun vadeli yukumlulukler",
-        "ozkaynaklar",
-        "aktif toplami",
-        "pasif toplami",
-        "toplam varliklar",
-        "toplam kaynaklar",
-    }:
-        return True
-    return False
-
-
-def _safe_map_item_to_key(raw_name: str) -> Optional[str]:
-    """
-    fin_mapping içindeki contains-match'in yanlışlıkla TOTAL key üretmesini engeller.
-    Örn: 'diger donen varliklar' içinde 'donen varliklar' geçiyor diye
-         current_assets_total'a gitmesin.
-    """
-    norm = normalize_text(raw_name)
-    key = map_item_to_key(raw_name)
-
-    if not key:
-        return None
-
-    # total key geldiyse ama satır total değilse iptal et
-    if key in TOTAL_KEYS and not _is_totalish(norm):
-        return None
-
-    return key
-
-
 def _items_to_canonical(items: List[Tuple[str, float]]) -> Tuple[Dict[str, float], List[Dict[str, Any]]]:
-    """
-    Excel satır isimlerini canonical key'lere çevirip toplar.
-    Ek olarak mapping log döndürür (debug için).
-    """
     out: Dict[str, float] = {}
     log: List[Dict[str, Any]] = []
-
     for name, val in items:
         n = normalize_text(name)
-        key = _safe_map_item_to_key(name)
-
+        key = map_item_to_key(name)
         if key:
             out[key] = out.get(key, 0.0) + float(val)
-
         log.append({
             "raw": name,
             "norm": n,
@@ -229,23 +363,66 @@ def _items_to_canonical(items: List[Tuple[str, float]]) -> Tuple[Dict[str, float
             "key_label": explain_key(key) if key else None,
             "value": float(val),
         })
-
     return out, log
 
 
-# =========================
-# Parse
-# =========================
+# ============================================================
+# 3) TEK GİRİŞ NOKTASI: parse_financials_xlsx
+# ============================================================
+
 def parse_financials_xlsx(xlsx_path: str) -> dict:
     wb = load_workbook(xlsx_path, data_only=True)
 
+    # 1) Öncelik: Mizan varsa koda göre oku (tasarım bağımsız)
+    tb_ws = _pick_trial_balance_ws(wb)
+    if tb_ws is not None:
+        tb_rows = _parse_trial_balance_sheet(tb_ws)
+        bs_canon = _trial_balance_to_canonical(tb_rows)
+
+        # Gelir sheet’i varsa onu kullan, yoksa mizandan üret
+        if SHEET_IS in wb.sheetnames:
+            # eski gelir parser
+            ws_is = wb[SHEET_IS]
+            is_headers = _find_kalem_headers(ws_is)
+            if not is_headers:
+                inc = _trial_balance_to_income_statement(tb_rows)
+                is_year = None
+                is_items = []
+                is_log = []
+            else:
+                hr, kc = is_headers[0]
+                years = _year_cols_from_header(ws_is, hr, kc)
+                is_year, vc = years[-1] if years else (None, kc + 1)
+                next_hr = is_headers[1][0] if len(is_headers) > 1 else ws_is.max_row + 1
+                is_items = _block_rows(ws_is, start_row=hr + 1, end_row=next_hr - 1, kalem_col=kc, value_col=vc)
+                inc, is_log = _items_to_canonical(is_items)
+        else:
+            inc = _trial_balance_to_income_statement(tb_rows)
+            is_year = None
+            is_items = []
+            is_log = []
+
+        return {
+            "year_bs": None,
+            "year_is": is_year,
+            "balance_sheet_raw": [(r.code + " " + r.name, r.balance) for r in tb_rows],
+            "income_statement_raw": is_items,
+            "balance_sheet": bs_canon,
+            "income_statement": inc,
+            "mapping_log": {
+                "mode": "trial_balance",
+                "trial_balance_rows": [{"code": r.code, "name": r.name, "balance": r.balance} for r in tb_rows],
+                "income_statement_mapping": is_log,
+            },
+        }
+
+    # 2) Mizan yoksa: eski BILANCO/GELIR akışı
     if SHEET_BS not in wb.sheetnames or SHEET_IS not in wb.sheetnames:
-        raise ValueError(f"Excel sheet adları {SHEET_BS} ve {SHEET_IS} olmalı.")
+        raise ValueError("Bu Excel’de mizan bulunamadı; ayrıca BILANCO/GELIR sheet’leri de yok.")
 
     ws_bs = wb[SHEET_BS]
     ws_is = wb[SHEET_IS]
 
-    # ========== BILANCO ==========
     bs_headers = _find_kalem_headers(ws_bs)
     if not bs_headers:
         raise ValueError("BILANCO sheet içinde 'KALEM' başlığı bulunamadı.")
@@ -253,28 +430,22 @@ def parse_financials_xlsx(xlsx_path: str) -> dict:
     bs_years_found: List[int] = []
     bs_items_all: List[Tuple[str, float]] = []
 
-    # Header’ları bloklara böl: her KALEM, bir sonraki KALEM’e kadar
     for idx, (hr, kc) in enumerate(bs_headers):
         next_hr = bs_headers[idx + 1][0] if idx + 1 < len(bs_headers) else ws_bs.max_row + 1
         end_row = next_hr - 1
-
         years = _year_cols_from_header(ws_bs, hr, kc)
         if not years:
             continue
-
-        # en güncel yıl ve kolon
         year, vc = years[-1]
         bs_years_found.append(year)
-
         items = _block_rows(ws_bs, start_row=hr + 1, end_row=end_row, kalem_col=kc, value_col=vc)
         bs_items_all.extend(items)
 
     if not bs_items_all:
-        raise ValueError("BILANCO sheet'inde okunabilir satır bulunamadı (KALEM blokları boş görünüyor).")
+        raise ValueError("BILANCO sheet'inde okunabilir satır bulunamadı.")
 
     bs_year = max(bs_years_found) if bs_years_found else None
 
-    # ========== GELIR ==========
     is_headers = _find_kalem_headers(ws_is)
     if not is_headers:
         raise ValueError("GELIR sheet içinde 'KALEM' başlığı bulunamadı.")
@@ -282,54 +453,42 @@ def parse_financials_xlsx(xlsx_path: str) -> dict:
     hr, kc = is_headers[0]
     years = _year_cols_from_header(ws_is, hr, kc)
     if not years:
-        raise ValueError("GELIR sheet'inde yıl kolonları bulunamadı (KALEM'in sağında 2022/2023 gibi).")
-
+        raise ValueError("GELIR sheet'inde yıl kolonları bulunamadı.")
     is_year, vc = years[-1]
     next_hr = is_headers[1][0] if len(is_headers) > 1 else ws_is.max_row + 1
     is_items = _block_rows(ws_is, start_row=hr + 1, end_row=next_hr - 1, kalem_col=kc, value_col=vc)
 
-    # canonical dönüşüm + mapping log
     bs_canon, bs_log = _items_to_canonical(bs_items_all)
     is_canon, is_log = _items_to_canonical(is_items)
-
-    bs_unmapped = [x for x in bs_log if not x["key"]]
-    is_unmapped = [x for x in is_log if not x["key"]]
 
     return {
         "year_bs": bs_year,
         "year_is": is_year,
-
         "balance_sheet_raw": bs_items_all,
         "income_statement_raw": is_items,
-
         "balance_sheet": bs_canon,
         "income_statement": is_canon,
-
-        # Debug
         "mapping_log": {
+            "mode": "legacy_bs_is",
             "balance_sheet": bs_log,
             "income_statement": is_log,
-            "unmapped_balance_sheet": bs_unmapped,
-            "unmapped_income_statement": is_unmapped,
+            "unmapped_balance_sheet": [x for x in bs_log if not x["key"]],
+            "unmapped_income_statement": [x for x in is_log if not x["key"]],
         },
     }
 
 
-# =========================
-# Analyze
-# =========================
+# ============================================================
+# 4) ANALİZ (ORANLAR) — DOĞRU PAY/PAYDA + EK METRİKLER
+# ============================================================
+
 def analyze_financials(fin: dict, sector: str) -> dict:
-    """
-    Sector: defense / construction / electrical / energy
-    10 madde üretir.
-    """
     bs = fin.get("balance_sheet", {}) or {}
     inc = fin.get("income_statement", {}) or {}
 
     def g(d: Dict[str, float], key: str) -> float:
         return float(d.get(key, 0.0) or 0.0)
 
-    # Canonical
     cash = g(bs, "cash_and_equivalents")
     ar = g(bs, "trade_receivables")
     inv = g(bs, "inventories")
@@ -348,53 +507,35 @@ def analyze_financials(fin: dict, sector: str) -> dict:
     fin_exp = g(inc, "finance_expense")
     interest_exp = g(inc, "interest_expense")
 
-    # Fallback totals
+    # Fallback: toplamlar yoksa (legacy parse)
     if ca <= 0:
-        ca = (
-            cash
-            + ar
-            + inv
-            + g(bs, "other_current_assets")
-            + g(bs, "other_receivables")
-            + g(bs, "prepaid_expenses")
-        )
-
+        ca = cash + ar + inv + g(bs, "other_current_assets") + g(bs, "other_receivables") + g(bs, "prepaid_expenses")
     if cl <= 0:
-        cl = (
-            g(bs, "trade_payables")
-            + debt_st
-            + g(bs, "tax_liabilities")
-            + g(bs, "provisions_st")
-            + g(bs, "lease_liabilities_st")
-        )
+        cl = g(bs, "trade_payables") + debt_st + g(bs, "tax_liabilities") + g(bs, "provisions_st") + g(bs, "lease_liabilities_st")
 
-    # Ratios
     current_ratio = (ca / cl) if cl else None
     quick_ratio = ((ca - inv) / cl) if cl else None
-    net_debt = (debt_st + debt_lt) - cash
 
-    # equity 0/negatifse ratio anlamlı değil
+    # sizin “sert quick” tanımınız: (Nakit + Ticari Alacak) / KVYK
+    hard_quick_ratio = ((cash + ar) / cl) if cl else None
+    cash_ratio = (cash / cl) if cl else None
+
+    nwc = ca - cl
+
+    net_debt = (debt_st + debt_lt) - cash
     debt_to_equity = ((debt_st + debt_lt) / equity) if equity and equity > 0 else None
 
     fin_cost = fin_exp if fin_exp else interest_exp
     interest_cover = (ebit / fin_cost) if fin_cost else None
     gross_margin = ((revenue - cogs) / revenue) if revenue else None
 
-    sector_profiles = {
-        "defense": {"wc_risk": "medium"},
-        "construction": {"wc_risk": "high"},
-        "electrical": {"wc_risk": "high"},
-        "energy": {"wc_risk": "medium"},
-    }
-    prof = sector_profiles.get(sector, sector_profiles["defense"])
-
     bullets: List[str] = []
 
-    # 1) Likidite
+    # 1) Cari oran
     if current_ratio is None:
-        bullets.append("Cari oran hesaplanamadı (kısa vadeli yükümlülük bulunamadı).")
+        bullets.append("Cari oran hesaplanamadı (KVYK bulunamadı).")
     elif current_ratio < 1:
-        bullets.append(f"Cari oran düşük ({current_ratio:.2f}). Kısa vadeli ödeme baskısı riski var.")
+        bullets.append(f"Cari oran düşük ({current_ratio:.2f}). KV borç ödeme baskısı riski var.")
     elif current_ratio < 1.5:
         bullets.append(f"Cari oran sınırda ({current_ratio:.2f}). Nakit tamponu güçlendirilebilir.")
     else:
@@ -402,84 +543,61 @@ def analyze_financials(fin: dict, sector: str) -> dict:
 
     # 2) Asit-test
     if quick_ratio is not None:
-        if quick_ratio < 0.8:
+        if quick_ratio < 1:
             bullets.append(f"Asit-test oranı düşük ({quick_ratio:.2f}). Stoksuz çevrimde zorlanma riski.")
         else:
             bullets.append(f"Asit-test oranı kabul edilebilir ({quick_ratio:.2f}).")
 
-    # 3) Net borç
-    bullets.append(f"Net borç (finansal borç - nakit): {net_debt:,.0f} (yaklaşık).")
+    # 3) Sert quick + 4) cash ratio
+    if hard_quick_ratio is not None:
+        bullets.append(f"Sert asit-test (Nakit+Alacak/KVYK): {hard_quick_ratio:.2f}.")
+    if cash_ratio is not None:
+        bullets.append(f"Nakit oranı (Cash Ratio): {cash_ratio:.2f}.")
 
-    # 4) Borç/Özkaynak
+    # 5) NWC
+    bullets.append(f"Net işletme sermayesi: {nwc:,.0f}.")
+
+    # 6) Net borç
+    bullets.append(f"Net borç (Finansal borç - nakit): {net_debt:,.0f} (yaklaşık).")
+
+    # 7) Borç/Özkaynak
     if debt_to_equity is None:
-        bullets.append("Borç/Özkaynak hesaplanamadı (özkaynak bulunamadı veya 0/negatif).")
+        bullets.append("Borç/Özkaynak hesaplanamadı (özkaynak 0/negatif veya yok).")
     else:
-        if debt_to_equity > 2.0:
-            bullets.append(f"Borç/Özkaynak yüksek ({debt_to_equity:.2f}). Finansal kaldıraç riski artmış.")
-        elif debt_to_equity > 1.0:
-            bullets.append(f"Borç/Özkaynak orta ({debt_to_equity:.2f}). Borç yönetimi disiplin gerektiriyor.")
-        else:
-            bullets.append(f"Borç/Özkaynak makul ({debt_to_equity:.2f}).")
+        bullets.append(f"Borç/Özkaynak: {debt_to_equity:.2f}.")
 
-    # 5) Faiz karşılama
+    # 8) Faiz karşılama
     if interest_cover is None:
-        bullets.append("Faiz karşılama oranı hesaplanamadı (finansman/faiz gideri bulunamadı/0).")
+        bullets.append("Faiz karşılama hesaplanamadı (finansman/faiz gideri yok/0).")
     else:
-        if interest_cover < 1.5:
-            bullets.append(f"Faiz karşılama zayıf ({interest_cover:.2f}). Faiz yükü operasyonu sıkıştırıyor olabilir.")
-        elif interest_cover < 3:
-            bullets.append(f"Faiz karşılama sınırda ({interest_cover:.2f}). Faiz şoklarına hassasiyet var.")
-        else:
-            bullets.append(f"Faiz karşılama iyi ({interest_cover:.2f}).")
+        bullets.append(f"Faiz karşılama: {interest_cover:.2f}.")
 
-    # 6) Brüt marj
+    # 9) Brüt marj
     if gross_margin is not None:
-        gm = gross_margin * 100
-        bullets.append(f"Brüt marj yaklaşık %{gm:.1f}. (Sektör kıyasına göre yorumlanmalı.)")
-
-    # 7) İşletme sermayesi
-    nwc = ca - cl
-    if prof["wc_risk"] == "high":
-        if nwc < 0:
-            bullets.append("Net işletme sermayesi negatif. Proje/taahhüt işlerinde nakit kırılması riski yüksek.")
-        else:
-            bullets.append("Net işletme sermayesi pozitif; yine de proje tahsilat/avans dengesi yakından izlenmeli.")
-    else:
-        if nwc < 0:
-            bullets.append("Net işletme sermayesi negatif. Vade yönetimi ve kısa vade refinansman planı kritik.")
-        else:
-            bullets.append("Net işletme sermayesi pozitif. Vade makası bozulursa tampon azalabilir.")
-
-    # 8) Nakit
-    if cash <= 0:
-        bullets.append("Nakit kalemi düşük/0 görünüyor. Günlük nakit akışı takibi şart.")
-    else:
-        bullets.append("Nakit var; kritik soru: bu nakit, kısa vadeli borç ve faaliyet giderlerini kaç ay taşır?")
-
-    # 9) Alacak/ciro
-    if ar > 0 and revenue > 0 and (ar / revenue) > 0.35:
-        bullets.append("Alacakların ciroya oranı yüksek görünüyor. Tahsilat disiplini ve müşteri limitleri önemli.")
-    else:
-        bullets.append("Alacak/ciro oranı makul seviyede görünüyor (veri uygunsa).")
+        bullets.append(f"Brüt marj yaklaşık %{gross_margin*100:.1f}.")
 
     # 10) Aksiyon
-    bullets.append("Öneri: Haftalık 13-hafta nakit projeksiyonu + borç vade haritası çıkarıp tek sayfada izleyelim.")
+    bullets.append("Öneri: 13-hafta nakit projeksiyonu + borç vade haritasını tek sayfada izleyelim.")
 
     return {
         "meta": {"year_bs": fin.get("year_bs"), "year_is": fin.get("year_is")},
         "metrics": {
             "current_ratio": current_ratio,
             "quick_ratio": quick_ratio,
+            "hard_quick_ratio": hard_quick_ratio,
+            "cash_ratio": cash_ratio,
+            "nwc": nwc,
+            "current_assets": ca,
+            "current_liabilities": cl,
+            "cash": cash,
+            "trade_receivables": ar,
+            "inventories": inv,
             "net_debt": net_debt,
             "debt_to_equity": debt_to_equity,
             "interest_cover": interest_cover,
             "gross_margin": gross_margin,
-            "nwc": nwc,
             "revenue": revenue,
             "cogs": cogs,
-            "cash": cash,
-            "current_assets": ca,
-            "current_liabilities": cl,
             "equity": equity,
             "total_assets": total_assets,
         },
