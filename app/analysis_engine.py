@@ -30,17 +30,47 @@ def _as_float(v: Any) -> float:
 
 # ============================================================
 # 1) MİZAN / TRIAL BALANCE PARSER (KODA DAYALI, TASARIM-BAĞIMSIZ)
+#    ✅ 3-haneli ana hesap konsolidasyonu + kontra (-) düzeltmesi
 # ============================================================
+
+# TDHP kontra ( - ) çalışan 3-haneli hesaplar (minimum kritik liste)
+# Not: İstersen bunu ayrı bir tdhp_rules.py'den import edebiliriz; şimdilik self-contained.
+CONTRA_3DIGIT = {
+    103, 119, 122, 129, 137, 139, 158, 199,
+    222, 224, 229, 237, 239,
+    241, 243, 247, 249,
+    257, 268, 278, 298, 299,
+    302, 308, 402, 408,
+    501, 503, 580, 591,
+}
+
+
+def _first3(code_digits: str) -> Optional[int]:
+    if not code_digits or len(code_digits) < 3:
+        return None
+    try:
+        return int(code_digits[:3])
+    except Exception:
+        return None
+
+
+def _is_contra_name(name: str) -> bool:
+    if not name:
+        return False
+    n = str(name)
+    return "(-" in n or "(-)" in n or n.strip().endswith("(-)") or " (-)" in n
+
 
 @dataclass
 class TBRow:
     code: str
     name: str
-    balance: float  # signed: asset +, liability/equity -, revenue -, expense +
+    balance: float          # signed: mizan bakiyesi (borç-alacak gibi)
+    code3: int              # first 3 digits
+    digits_len: int         # kaç digit (100 vs 10001 vs 10001001)
 
 
 def _looks_like_trial_balance(ws) -> bool:
-    # Header satırında "Hesap Kodu" vb arıyoruz
     for r in range(1, min(ws.max_row, 30) + 1):
         row = [ws.cell(r, c).value for c in range(1, min(ws.max_column, 15) + 1)]
         norm = " ".join(normalize_text(x) for x in row if x is not None)
@@ -50,12 +80,6 @@ def _looks_like_trial_balance(ws) -> bool:
 
 
 def _find_tb_header(ws) -> Tuple[int, Dict[str, int]]:
-    """
-    Trial balance sheet'inde header satırını ve kolon index'lerini bulur.
-    Beklenen başlık örnekleri:
-      Hesap Kodu | Hesap Adı | Bakiye
-      Hesap Kodu | Hesap Adı | Bakiye Borç | Bakiye Alacak | Bakiye
-    """
     header_row = None
     headers: Dict[str, int] = {}
 
@@ -66,10 +90,10 @@ def _find_tb_header(ws) -> Tuple[int, Dict[str, int]]:
         row = [ws.cell(r, c).value for c in range(1, min(ws.max_column, 25) + 1)]
         normed = [norm_cell(x) for x in row]
 
-        # Hesap kodu + hesap adı şart
-        if any(x == "hesap kodu" for x in normed) and any(x in {"hesap adi", "hesap adı"} or "hesap ad" in x for x in normed):
+        if any(x == "hesap kodu" for x in normed) and any(
+            x in {"hesap adi", "hesap adı"} or "hesap ad" in x for x in normed
+        ):
             header_row = r
-            # kolonları eşle
             for idx, h in enumerate(normed, start=1):
                 if h == "hesap kodu":
                     headers["code"] = idx
@@ -86,12 +110,11 @@ def _find_tb_header(ws) -> Tuple[int, Dict[str, int]]:
     if not header_row or "code" not in headers:
         raise ValueError("Mizan sheet'inde header bulunamadı (Hesap Kodu...).")
 
-    # balance yoksa debit-credit'ten üretiriz
     if "balance" not in headers and ("bal_debit" not in headers or "bal_credit" not in headers):
         raise ValueError("Mizan sheet'inde 'Bakiye' veya 'Bakiye Borç/Alacak' kolonları bulunamadı.")
 
     if "name" not in headers:
-        headers["name"] = headers["code"] + 1  # fallback
+        headers["name"] = headers["code"] + 1
 
     return header_row, headers
 
@@ -104,16 +127,18 @@ def _parse_trial_balance_sheet(ws) -> List[TBRow]:
         raw_code = ws.cell(r, col["code"]).value
         if raw_code is None:
             continue
-        code = str(raw_code).strip()
-        if code == "":
+        code_txt = str(raw_code).strip()
+        if code_txt == "":
             continue
 
-        # Bazı mizanda grup satırları: "10." gibi gelir -> bunu da alabiliriz ama toplamda çifte sayma riskli
-        # Bu yüzden sadece 3 haneli ve üstü (100, 102, 320, 600...) hesapları alalım:
-        code_digits = "".join(ch for ch in code if ch.isdigit())
+        # sadece digitleri al
+        code_digits = "".join(ch for ch in code_txt if ch.isdigit())
         if len(code_digits) < 3:
             continue
-        code = code_digits
+
+        c3 = _first3(code_digits)
+        if c3 is None:
+            continue
 
         name = str(ws.cell(r, col["name"]).value or "").strip()
 
@@ -124,24 +149,29 @@ def _parse_trial_balance_sheet(ws) -> List[TBRow]:
             bal_cred = _as_float(ws.cell(r, col["bal_credit"]).value)
             bal = bal_deb - bal_cred
 
-        # 0 bakiyeleri atla
         if abs(bal) < 1e-6:
             continue
 
-        out.append(TBRow(code=code, name=name, balance=float(bal)))
+        out.append(
+            TBRow(
+                code=code_digits,
+                name=name,
+                balance=float(bal),
+                code3=int(c3),
+                digits_len=len(code_digits),
+            )
+        )
 
     return out
 
 
 def _pick_trial_balance_ws(wb) -> Optional[Any]:
-    # Önce sheet adından yakala
     for nm in wb.sheetnames:
         n = normalize_text(nm)
         if "mizan" in n:
             ws = wb[nm]
             if _looks_like_trial_balance(ws):
                 return ws
-    # Sonra içerikten yakala
     for nm in wb.sheetnames:
         ws = wb[nm]
         if _looks_like_trial_balance(ws):
@@ -149,72 +179,101 @@ def _pick_trial_balance_ws(wb) -> Optional[Any]:
     return None
 
 
-def _sum_prefix(rows: List[TBRow], prefixes: List[str]) -> float:
-    s = 0.0
-    for row in rows:
-        for p in prefixes:
-            if row.code.startswith(p):
-                s += row.balance
-                break
-    return s
+def _consolidate_to_3digit(rows: List[TBRow]) -> Dict[int, float]:
+    """
+    ✅ Ana kural:
+    - Eğer bir 3-haneli hesap mizanda "aynen" varsa (digits_len == 3),
+      o hesabın toplamını SADECE o satırlardan al (alt kırılımları ignore et).
+    - Yoksa (3-haneli satır yoksa) alt kırılımları topla (10001,1000101..).
+    ✅ Kontra (-) hesaplar:
+    - 3-haneli kod CONTRA_3DIGIT içindeyse veya satır adında (-) varsa,
+      katkı her zaman negatif olacak şekilde normalize edilir.
+    """
+    # code3 -> list[TBRow]
+    bucket: Dict[int, List[TBRow]] = {}
+    for r in rows:
+        bucket.setdefault(r.code3, []).append(r)
+
+    out: Dict[int, float] = {}
+
+    for code3, lst in bucket.items():
+        exact3 = [x for x in lst if x.digits_len == 3]
+        use_rows = exact3 if exact3 else lst
+
+        total = 0.0
+        for x in use_rows:
+            v = float(x.balance)
+
+            # kontra düzeltmesi (isim veya kural)
+            if (code3 in CONTRA_3DIGIT) or _is_contra_name(x.name):
+                v = -abs(v)
+
+            total += v
+
+        out[code3] = total
+
+    return out
 
 
-def _sum_range_prefix(rows: List[TBRow], start_prefix: str, end_prefix: str) -> float:
-    # string compare yerine integer compare
-    s = 0.0
-    a = int(start_prefix)
-    b = int(end_prefix)
-    for row in rows:
-        try:
-            c = int(row.code[:len(start_prefix)])
-        except Exception:
-            continue
-        if a <= c <= b:
-            s += row.balance
-    return s
+def _sum_3range(b3: Dict[int, float], lo: int, hi: int) -> float:
+    return sum(v for k, v in b3.items() if lo <= k <= hi)
+
+
+def _sum_3set(b3: Dict[int, float], codes: List[int]) -> float:
+    return sum(float(b3.get(c, 0.0) or 0.0) for c in codes)
 
 
 def _trial_balance_to_canonical(rows: List[TBRow]) -> Dict[str, float]:
     """
-    Tek Düzen kodlarına göre canonical BS/IS üretir.
-    Sign normalization:
-      - Assets (+) 그대로
-      - Liabilities/Equity (-) -> pozitif yapmak için - ile çevir
+    Tek Düzen kodlarına göre canonical BS üretir.
+    - Varlıklar: 100-299
+    - KVYK: 300-399
+    - UVYK: 400-499
+    - Özkaynak: 500-599
+    İşaret:
+    - Mizanda borçlar genelde negatif gelebilir. Biz raporda pozitif büyüklük isteriz -> abs ile normalize.
     """
     bs: Dict[str, float] = {}
 
-    # Dönen varlıklar (1xx)
-    cash = _sum_prefix(rows, ["100", "101", "102", "108"]) + _sum_prefix(rows, ["103"])  # 103 genelde (-) çıkar, mizanda negatif olabilir
-    trade_ar = _sum_prefix(rows, ["120", "121", "122", "126", "127", "128", "129"])
-    other_ar = _sum_prefix(rows, ["131", "132", "133", "135", "136", "137", "138", "139"])
-    inv = _sum_prefix(rows, ["150", "151", "152", "153", "157", "158", "170", "171", "172", "173", "178", "179", "159"])
-    prepaid = _sum_prefix(rows, ["180"])
-    other_ca = _sum_prefix(rows, ["190", "191", "192", "193", "195", "196", "197", "198", "199"])
+    b3 = _consolidate_to_3digit(rows)
 
-    current_assets = _sum_prefix(rows, ["1"])  # tüm 1xx (signed +)
-    non_current_assets = _sum_prefix(rows, ["2"])
+    # Dönen varlıklar: 100-199
+    current_assets = _sum_3range(b3, 100, 199)
+
+    # Duran varlıklar: 200-299
+    non_current_assets = _sum_3range(b3, 200, 299)
+
     total_assets = current_assets + non_current_assets
 
-    # KVYK: 3xx (mizanda negatif -> pozitif yapmak için -)
-    cl_signed = _sum_prefix(rows, ["3"])
-    current_liabilities = -cl_signed
+    # Alt kırılımlar
+    cash = _sum_3set(b3, [100, 101, 102, 108, 103])  # 103 zaten kontra -> negatif katkı
+    trade_ar = _sum_3range(b3, 120, 129)
+    other_ar = _sum_3range(b3, 131, 139)
+    inv = _sum_3set(b3, [150, 151, 152, 153, 157, 158, 159, 170, 171, 172, 173, 178, 179])
+    prepaid = float(b3.get(180, 0.0) or 0.0)
+    other_ca = _sum_3set(b3, [190, 191, 192, 193, 195, 196, 197, 198, 199])
 
-    # UVYK: 4xx
-    ll_signed = _sum_prefix(rows, ["4"])
-    long_liabilities = -ll_signed
+    # KVYK: 300-399 (pozitif büyüklük)
+    cl_signed = _sum_3range(b3, 300, 399)
+    current_liabilities = abs(cl_signed)
 
-    # Finansal borçlar (KV: 30x, UV: 40x)
-    st_fin_debt = -_sum_prefix(rows, ["300", "301", "303", "304", "305", "306", "309"])
-    lt_fin_debt = -_sum_prefix(rows, ["400", "401", "405", "407", "409"])
+    # UVYK: 400-499
+    ll_signed = _sum_3range(b3, 400, 499)
+    long_liabilities = abs(ll_signed)
+
+    # Finansal borçlar
+    st_fin_debt = abs(_sum_3set(b3, [300, 301, 303, 304, 305, 306, 309, 302, 308]))
+    lt_fin_debt = abs(_sum_3set(b3, [400, 401, 405, 407, 409, 402, 408]))
 
     # Ticari borçlar
-    trade_payables = -_sum_prefix(rows, ["320", "321", "322", "326", "329"])
+    trade_payables = abs(_sum_3range(b3, 320, 329))
 
     # Vergi+SGK vb
-    tax_liab = -_sum_prefix(rows, ["360", "361", "368", "369", "391", "392"])
+    tax_liab = abs(_sum_3set(b3, [360, 361, 368, 369, 391, 392]))
 
-    # Özkaynak: 5xx (mizanda negatif -> pozitif)
-    equity = -_sum_prefix(rows, ["5"])
+    # Özkaynak: 500-599
+    eq_signed = _sum_3range(b3, 500, 599)
+    equity = abs(eq_signed)
 
     bs["cash_and_equivalents"] = cash
     bs["trade_receivables"] = trade_ar
@@ -238,34 +297,32 @@ def _trial_balance_to_canonical(rows: List[TBRow]) -> Dict[str, float]:
     bs["equity_total"] = equity
     bs["total_liabilities"] = current_liabilities + long_liabilities
 
+    # Debug: 3-digit konsolide map (istersen kaldır)
+    bs["_tb_3digit_map"] = 0.0  # placeholder, serialize etmiyorsan sorun değil
+
     return bs
 
 
 def _trial_balance_to_income_statement(rows: List[TBRow]) -> Dict[str, float]:
     """
     Mizan’dan P&L üretimi (gelir tablosu sheet’i yoksa fallback).
-    Tek Düzen:
-      60 Brüt satışlar (credit -> negative) => revenue positive = -sum(60x)
-      61 Satış indirimleri (debit) => discounts positive
-      62 COGS (debit) => positive
-      63 Opex (debit) => positive
-      64 Other op income (credit) => positive = -sum(64x)
-      65 Other op expense (debit) => positive
-      66 Finance expense (debit) => positive
+    60..69 aralığı
     """
     inc: Dict[str, float] = {}
+    b3 = _consolidate_to_3digit(rows)
 
-    gross_sales = -_sum_prefix(rows, ["60"])
-    discounts = _sum_prefix(rows, ["61"])  # debit +
+    # Gelirler credit (-) gelebilir → abs ile normalize edip “pozitif gelir” yapalım
+    gross_sales = abs(_sum_3range(b3, 600, 609))
+    discounts = abs(_sum_3range(b3, 610, 619))
     revenue_net = gross_sales - discounts
 
-    cogs = _sum_prefix(rows, ["62"])
-    opex = _sum_prefix(rows, ["63"])
+    cogs = abs(_sum_3range(b3, 620, 629))
+    opex = abs(_sum_3range(b3, 630, 639))
 
-    other_op_income = -_sum_prefix(rows, ["64"])
-    other_op_exp = _sum_prefix(rows, ["65"])
+    other_op_income = abs(_sum_3range(b3, 640, 649))
+    other_op_exp = abs(_sum_3range(b3, 653, 659))
 
-    fin_exp = _sum_prefix(rows, ["66"])
+    fin_exp = abs(_sum_3range(b3, 660, 669))
 
     gross_profit = revenue_net - cogs
     ebit = gross_profit - opex + other_op_income - other_op_exp
@@ -276,7 +333,7 @@ def _trial_balance_to_income_statement(rows: List[TBRow]) -> Dict[str, float]:
     inc["opex"] = opex
     inc["ebit"] = ebit
     inc["finance_expense"] = fin_exp
-    inc["interest_expense"] = 0.0  # alt kırılım yoksa 0 bırak
+    inc["interest_expense"] = 0.0
 
     return inc
 
@@ -373,7 +430,7 @@ def _items_to_canonical(items: List[Tuple[str, float]]) -> Tuple[Dict[str, float
 def parse_financials_xlsx(xlsx_path: str) -> dict:
     wb = load_workbook(xlsx_path, data_only=True)
 
-    # 1) Öncelik: Mizan varsa koda göre oku (tasarım bağımsız)
+    # 1) Öncelik: Mizan varsa koda göre oku
     tb_ws = _pick_trial_balance_ws(wb)
     if tb_ws is not None:
         tb_rows = _parse_trial_balance_sheet(tb_ws)
@@ -381,7 +438,6 @@ def parse_financials_xlsx(xlsx_path: str) -> dict:
 
         # Gelir sheet’i varsa onu kullan, yoksa mizandan üret
         if SHEET_IS in wb.sheetnames:
-            # eski gelir parser
             ws_is = wb[SHEET_IS]
             is_headers = _find_kalem_headers(ws_is)
             if not is_headers:
@@ -513,10 +569,10 @@ def analyze_financials(fin: dict, sector: str) -> dict:
     if cl <= 0:
         cl = g(bs, "trade_payables") + debt_st + g(bs, "tax_liabilities") + g(bs, "provisions_st") + g(bs, "lease_liabilities_st")
 
+    # Oranlar
     current_ratio = (ca / cl) if cl else None
     quick_ratio = ((ca - inv) / cl) if cl else None
 
-    # sizin “sert quick” tanımınız: (Nakit + Ticari Alacak) / KVYK
     hard_quick_ratio = ((cash + ar) / cl) if cl else None
     cash_ratio = (cash / cl) if cl else None
 
@@ -531,7 +587,6 @@ def analyze_financials(fin: dict, sector: str) -> dict:
 
     bullets: List[str] = []
 
-    # 1) Cari oran
     if current_ratio is None:
         bullets.append("Cari oran hesaplanamadı (KVYK bulunamadı).")
     elif current_ratio < 1:
@@ -541,42 +596,33 @@ def analyze_financials(fin: dict, sector: str) -> dict:
     else:
         bullets.append(f"Cari oran iyi ({current_ratio:.2f}). Kısa vadeli likidite daha rahat görünüyor.")
 
-    # 2) Asit-test
     if quick_ratio is not None:
         if quick_ratio < 1:
             bullets.append(f"Asit-test oranı düşük ({quick_ratio:.2f}). Stoksuz çevrimde zorlanma riski.")
         else:
             bullets.append(f"Asit-test oranı kabul edilebilir ({quick_ratio:.2f}).")
 
-    # 3) Sert quick + 4) cash ratio
     if hard_quick_ratio is not None:
         bullets.append(f"Sert asit-test (Nakit+Alacak/KVYK): {hard_quick_ratio:.2f}.")
     if cash_ratio is not None:
         bullets.append(f"Nakit oranı (Cash Ratio): {cash_ratio:.2f}.")
 
-    # 5) NWC
     bullets.append(f"Net işletme sermayesi: {nwc:,.0f}.")
-
-    # 6) Net borç
     bullets.append(f"Net borç (Finansal borç - nakit): {net_debt:,.0f} (yaklaşık).")
 
-    # 7) Borç/Özkaynak
     if debt_to_equity is None:
         bullets.append("Borç/Özkaynak hesaplanamadı (özkaynak 0/negatif veya yok).")
     else:
         bullets.append(f"Borç/Özkaynak: {debt_to_equity:.2f}.")
 
-    # 8) Faiz karşılama
     if interest_cover is None:
         bullets.append("Faiz karşılama hesaplanamadı (finansman/faiz gideri yok/0).")
     else:
         bullets.append(f"Faiz karşılama: {interest_cover:.2f}.")
 
-    # 9) Brüt marj
     if gross_margin is not None:
         bullets.append(f"Brüt marj yaklaşık %{gross_margin*100:.1f}.")
 
-    # 10) Aksiyon
     bullets.append("Öneri: 13-hafta nakit projeksiyonu + borç vade haritasını tek sayfada izleyelim.")
 
     return {

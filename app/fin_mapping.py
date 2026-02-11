@@ -1,4 +1,3 @@
-# app/fin_mapping.py
 from __future__ import annotations
 
 import re
@@ -8,7 +7,7 @@ from typing import Dict, List, Tuple, Optional
 
 
 # -------------------------------------------------
-# 1) Normalizasyon (TEK TANIM!)
+# 1) Normalizasyon
 # -------------------------------------------------
 def normalize_text(s: str) -> str:
     if s is None:
@@ -33,13 +32,15 @@ def normalize_text(s: str) -> str:
     while tokens:
         t = tokens[0]
         if t in roman:
-            tokens.pop(0); continue
+            tokens.pop(0)
+            continue
         if t.isdigit():
-            tokens.pop(0); continue
+            tokens.pop(0)
+            continue
         if len(t) == 1 and t.isalpha():  # a, b, c...
-            tokens.pop(0); continue
+            tokens.pop(0)
+            continue
         break
-
     return " ".join(tokens).strip()
 
 
@@ -50,7 +51,7 @@ def best_fuzzy_match(
 ) -> Optional[Tuple[str, float]]:
     if not needle:
         return None
-    best: Optional[Tuple[str, float]] = None
+    best = None
     for cand in haystack:
         ratio = SequenceMatcher(None, needle, cand).ratio()
         if best is None or ratio > best[1]:
@@ -61,7 +62,7 @@ def best_fuzzy_match(
 
 
 # -------------------------------------------------
-# 2) Kanonik (standart) kalem anahtarları
+# 2) Kanonik anahtarlar
 # -------------------------------------------------
 CANONICAL_KEYS = {
     # Dönen varlıklar
@@ -126,106 +127,94 @@ CANONICAL_KEYS = {
 # -------------------------------------------------
 SYNONYMS: Dict[str, List[str]] = {
     "cash_and_equivalents": [
-        "nakit", "kasa", "kasa ve banka", "kasa banka", "bankalar", "banka", "mevduat",
+        "nakit", "kasa", "kasa ve banka", "bankalar", "banka", "mevduat",
         "vadesiz mevduat", "vadeli mevduat", "hazir degerler",
+        "para mevcudu", "para mevcudu ve hazir degerler",
         "cash", "cash equivalents", "cash and cash equivalents",
         "repo", "ters repo", "para piyasasi fonu", "likit fon",
-        "kasa bankalar", "nakit ve nakit benzerleri",
     ],
     "trade_receivables": [
         "ticari alacaklar", "musteri alacaklari", "alici hesaplari",
-        "cekler", "senetli alacaklar", "alacak senetleri",
+        "cekler", "senetli alacaklar",
         "accounts receivable", "trade receivables", "ar",
-        "sozlesme varligi", "contract assets",
-        "hak edis", "hak edis alacaklari", "hakedis alacagi", "hakediş alacağı",
-        "alacaklar (ticari)", "ticari alacak senetleri",
+        "sozlesme varligi", "contract assets", "hak edis", "hak edis alacaklari", "hakedis alacagi",
+        # çok sık: excel'de sadece "Alacaklar"
+        "alacaklar",
     ],
     "other_receivables": [
         "diger alacaklar", "ortaklardan alacaklar", "iliskili taraflardan alacaklar",
         "verilen depozito ve teminatlar", "depozitolar", "teminatlar",
         "other receivables",
-        "personelden alacaklar", "kamu alacaklari",
     ],
     "inventories": [
-        "stoklar", "ham madde", "yari mamul", "yarimamul", "mamul", "ticari mallar",
+        "stoklar", "ham madde", "yari mamul", "mamul", "ticari mallar",
         "inventories", "work in progress", "wip",
         "devam eden insaatlar", "devam eden projeler", "proje maliyetleri",
-        "insaat maliyetleri", "taahhut maliyetleri",
     ],
     "prepaid_expenses": [
-        "pesin odenmis giderler", "gelecek aylara ait giderler", "gelecek aylara ait gider",
+        "pesin odenmis giderler", "gelecek aylara ait giderler",
         "prepaid expenses", "advance payments",
-        "kira pesin", "sigorta pesin",
+        "verilen siparis avanslari", "verilen avanslar",
     ],
     "other_current_assets": [
         "diger donen varliklar", "diger cari varliklar",
-        "devreden kdv", "indirilecek kdv", "kdv", "kdv alacagi",
+        "devreden kdv", "indirilecek kdv", "kdv",
         "gelir tahakkuklari", "tahakkuk", "other current assets",
     ],
     "current_assets_total": [
         "donen varliklar", "donen varliklar toplami", "toplam donen varliklar",
         "current assets", "current assets total",
-        "donen varliklar toplam", "donen varliklar toplamı",
+        "i donen varliklar", "i donen varliklar toplami",
     ],
 
     "short_term_liabilities": [
         "kisa vadeli yukumlulukler", "kisa vadeli borclar", "kv yukumlulukler",
         "cari yukumlulukler", "current liabilities", "short term liabilities",
         "kisa vadeli yukumlulukler toplami", "toplam kisa vadeli yukumlulukler",
-        "kisa vadeli yabanci kaynaklar", "toplam kisa vadeli yabanci kaynaklar",
     ],
     "long_term_liabilities": [
         "uzun vadeli yukumlulukler", "uzun vadeli borclar",
         "non current liabilities", "long term liabilities",
-        "uzun vadeli yabanci kaynaklar", "toplam uzun vadeli yabanci kaynaklar",
     ],
     "trade_payables": [
-        "ticari borclar", "saticilar", "satıcılar",
-        "accounts payable", "trade payables", "ap",
-        "tedarikci borclari", "tedarikçi borçları",
+        "ticari borclar", "saticilar", "accounts payable", "trade payables", "ap",
     ],
     "short_term_fin_debt": [
-        "kisa vadeli finansal borclar", "kisa vadeli banka kredileri", "kv kredi",
+        "kisa vadeli finansal borclar", "kisa vadeli banka borcu", "k v banka borcu",
+        "kisa vadeli banka kredileri", "kv kredi",
         "short term debt", "short term loans",
-        "kisa vadeli borclanma", "kv finansal borc", "kredi borclari (kisa)",
     ],
     "long_term_fin_debt": [
-        "uzun vadeli finansal borclar", "uzun vadeli banka kredileri", "uv kredi",
+        "uzun vadeli finansal borclar", "u v banka borcu", "uv banka borcu",
+        "uzun vadeli banka kredileri", "uv kredi",
         "long term debt", "long term loans",
-        "uzun vadeli borclanma", "uv finansal borc", "kredi borclari (uzun)",
     ],
     "tax_liabilities": [
         "vergi yukumlulukleri", "vergi borclari", "tax payable",
-        "kdv borcu", "stopaj borcu", "sgk borcu", "muhtasar",
-    ],
-    "total_liabilities": [
-        "toplam yukumlulukler", "toplam borclar", "borclar toplami",
-        "liabilities total", "total liabilities",
-        "yabanci kaynaklar toplami", "toplam yabanci kaynaklar",
+        "kdv borcu", "stopaj borcu", "sgk borcu",
     ],
 
     "equity_total": [
         "ozkaynak", "ozkaynaklar", "oz sermaye", "ozsermaye",
         "equity", "total equity",
         "ozkaynaklar toplami", "toplam ozkaynaklar", "ozkaynak toplam",
-        "toplam ozsermaye", "ana ortakliga ait ozkaynak",
-        "ozkaynaklar toplamı", "toplam ozkaynaklar",  # unicode varyant
+        "toplam ozsermaye",
+        # kritik varyant: arada boşlukla yazılan
+        "oz kaynaklar", "oz kaynaklar toplami", "toplam oz kaynaklar",
     ],
     "paid_in_capital": [
-        "odenmis sermaye", "sermaye", "share capital", "paid in capital",
+        "odenmis sermaye", "share capital", "paid in capital",
+        # sadece "sermaye" çok generik -> contains'ten zaten eleyeceğiz
+        "sermaye",
     ],
     "retained_earnings": [
         "gecmis yillar kar zararlari", "retained earnings", "yedekler",
-        "birikmis karlar", "birikmis zararlar",
+        "ihtiyatlar",
     ],
     "net_profit": [
         "donem net kari", "donem net zarari", "net kar", "net zarar",
         "profit for the period", "net profit",
-    ],
-    "total_liabilities_and_equity": [
-        "toplam kaynaklar", "kaynaklar toplami", "pasif toplami",
-        "total liabilities and equity", "liabilities and equity total",
-        "pasif toplam", "toplam pasif",
+        "donem kari", "donem zarari",
     ],
 
     "revenue": [
@@ -234,18 +223,14 @@ SYNONYMS: Dict[str, List[str]] = {
     "cogs": [
         "satislarin maliyeti", "cost of sales", "cogs",
     ],
-    "gross_profit": [
-        "brut kar", "gross profit",
-    ],
     "ebit": [
         "faaliyet kari", "esas faaliyet kari", "ebit", "operating profit",
     ],
     "finance_expense": [
         "finansman giderleri", "financial expenses", "finance expense",
-        "finansal giderler", "borclanma giderleri",
     ],
     "interest_expense": [
-        "faiz gideri", "interest expense", "faiz giderleri",
+        "faiz gideri", "interest expense",
     ],
 }
 
@@ -262,7 +247,7 @@ def _build_normalized_synonyms() -> Dict[str, List[str]]:
         if key in CANONICAL_KEYS:
             vals.append(CANONICAL_KEYS[key])
 
-        # key string’i de ekle (bazı Excel'ler direkt key yazar)
+        # key string’i de ekle
         vals.append(key)
 
         normed = [normalize_text(x) for x in vals if x is not None and str(x).strip()]
@@ -271,7 +256,7 @@ def _build_normalized_synonyms() -> Dict[str, List[str]]:
         uniq: List[str] = []
         seen = set()
         for t in normed:
-            if t and t not in seen:
+            if t not in seen:
                 uniq.append(t)
                 seen.add(t)
 
@@ -288,26 +273,27 @@ for key, terms in _norm_syn.items():
         _all_norm_terms.append(t)
         _term_to_key[t] = key
 
-# contains match için: en uzun terim önce (daha doğru yakalar)
-_terms_by_len_desc = sorted(_term_to_key.items(), key=lambda kv: len(kv[0]), reverse=True)
 
-# contains match'i bozan jenerik kelimeler (tek başına görünürse eşleme yapma)
-_GENERIC_STOPWORDS = {
-    "toplam", "diger", "genel", "varliklar", "borclar", "kaynaklar", "tutar", "tl", "try",
-    "bilanco", "gelir", "tablosu", "kalem",
+# contains match'i güvenli hale getirmek için:
+# - uzun terim önce
+# - generic terimleri ele
+_GENERIC_CONTAINS_BLACKLIST = {
+    "toplam", "genel", "sermaye", "borc", "borclar", "varlik", "varliklar", "kaynak", "kaynaklar",
+    "gider", "gelir", "kar", "zarar",
 }
+_sorted_terms_for_contains = sorted(_term_to_key.keys(), key=len, reverse=True)
 
 
-def _is_generic_term(term: str) -> bool:
-    # term bir stopword ise veya sadece stopwordlerden oluşuyorsa generic say
-    toks = term.split()
-    if not toks:
-        return True
-    if len(toks) == 1 and toks[0] in _GENERIC_STOPWORDS:
-        return True
-    if all(t in _GENERIC_STOPWORDS for t in toks):
-        return True
-    return False
+def _contains_word_sequence(hay: str, needle: str) -> bool:
+    """
+    needle bir kelime dizisi ise, hay içinde kelime sınırlarında geçsin.
+    (Basit ama çok işe yarar: yanlış contains eşleşmelerini azaltır.)
+    """
+    if not needle or needle in _GENERIC_CONTAINS_BLACKLIST:
+        return False
+    # kelime sınırı: " oz kaynaklar " gibi
+    pattern = r"(?:^|\s)" + re.escape(needle) + r"(?:$|\s)"
+    return re.search(pattern, hay) is not None
 
 
 def map_item_to_key(item_name: str) -> Optional[str]:
@@ -319,17 +305,12 @@ def map_item_to_key(item_name: str) -> Optional[str]:
     if n in _term_to_key:
         return _term_to_key[n]
 
-    # 2) contains match (GÜVENLİLEŞTİRİLDİ)
-    #    - en uzun terim önce
-    #    - çok jenerik termleri ignore
-    #    - minimum uzunluk şartı
-    for term, key in _terms_by_len_desc:
-        if len(term) < 9:
+    # 2) güvenli contains match (uzun terim öncelikli + kelime sınırı)
+    for term in _sorted_terms_for_contains:
+        if len(term) < 8:
             continue
-        if _is_generic_term(term):
-            continue
-        if term in n:
-            return key
+        if _contains_word_sequence(n, term):
+            return _term_to_key[term]
 
     # 3) fuzzy match
     m = best_fuzzy_match(n, _all_norm_terms, threshold=0.86)
