@@ -191,10 +191,8 @@ def _consolidate_to_3digit(rows: List[TBRow]) -> Dict[int, float]:
         total = 0.0
         for x in use_rows:
             v = float(x.balance)
-
             if (code3 in CONTRA_3DIGIT) or _is_contra_name(x.name):
                 v = -abs(v)
-
             total += v
 
         out[code3] = total
@@ -214,8 +212,9 @@ def _sum_prefix(rows: List[TBRow], prefixes: List[str]) -> float:
     """
     ✅ NameError fix + Çifte saymayı engeller:
     - Önce 3-haneli konsolidasyon (b3) üzerinden toplar.
-    - Prefix "60" gibi 2 haneliyse, 600-609 aralığı gibi davranır.
-    - Prefix "780" gibi 3 haneliyse doğrudan b3[780] kullanır.
+    - Prefix "60" gibi 2 haneliyse 600-699 aralığına eşler
+    - Prefix "6" gibi 1 haneliyse 600-699 değil; 600-699 için "60" verin.
+    - Prefix "780" gibi 3 haneliyse doğrudan b3[780] gibi.
     """
     b3 = _consolidate_to_3digit(rows)
 
@@ -226,14 +225,19 @@ def _sum_prefix(rows: List[TBRow], prefixes: List[str]) -> float:
             continue
 
         if len(pd) == 1:
+            # "6" gibi -> 600-699 varsayımı yapmayalım; çok muğlak.
+            # Yine de isteyen olursa: 6xx yerine 600-699
             lo = int(pd) * 100
             hi = lo + 99
             total += _sum_3range(b3, lo, hi)
+
         elif len(pd) == 2:
+            # 60 -> 600-699
             lo = int(pd) * 10
-            lo = lo * 10  # 2 digit => 600-699 gibi düşün: 60 -> 600-699
+            lo = lo * 10
             hi = lo + 99
             total += _sum_3range(b3, lo, hi)
+
         else:
             k = int(pd[:3])
             total += float(b3.get(k, 0.0) or 0.0)
@@ -298,6 +302,18 @@ def _trial_balance_to_canonical(rows: List[TBRow]) -> Dict[str, float]:
 
 
 def _trial_balance_to_income_statement(rows: List[TBRow]) -> Dict[str, float]:
+    """
+    Mizan’dan P&L üretimi (fallback).
+
+    Tek Düzen (6xx) + 7/A (78x) + 7/B (797) destek:
+      - Revenue: 60 (credit -> negative) => revenue positive = -sum(60x)
+      - Discounts: 61 (debit) => positive
+      - COGS: 62 (debit) => positive
+      - Opex: 63 (debit) => positive
+      - Other op income: 64 (credit -> negative) => positive
+      - Other op expense: 65 (debit) => positive
+      - Finance expense: 66 (debit) OR 780/781/782 OR 797
+    """
     inc: Dict[str, float] = {}
 
     gross_sales = -_sum_prefix(rows, ["60"])
@@ -328,6 +344,156 @@ def _trial_balance_to_income_statement(rows: List[TBRow]) -> Dict[str, float]:
     inc["interest_expense"] = 0.0
 
     return inc
+
+
+# ============================================================
+# 1.5) GELİR SHEET ESNEK PARSER (KOD YOK, KALEM ŞARTI YOK)
+# ============================================================
+
+def _looks_like_income_sheet(ws) -> bool:
+    needles = ["gelir tablosu", "net satis", "satıs", "satis", "hasilat", "satışların maliyeti",
+               "satislarin maliyeti", "brut kar", "faiz", "finansman", "favok", "ebit"]
+    for r in range(1, min(ws.max_row, 40) + 1):
+        row = [ws.cell(r, c).value for c in range(1, min(ws.max_column, 20) + 1)]
+        text = " ".join(normalize_text(x) for x in row if x is not None)
+        if any(n in text for n in needles):
+            return True
+    return False
+
+
+def _find_income_header(ws) -> Optional[Tuple[int, int, int]]:
+    """
+    returns: (header_row, desc_col, value_col)
+    """
+    desc_candidates = {
+        "kalem", "aciklama", "açıklama", "hesap adi", "hesap adı", "tanim", "tanım",
+        "gelir tablosu kalemi", "hesap", "kalem adi", "kalem adı"
+    }
+    value_candidates = {
+        "tutar", "cari donem", "cari dönem", "donem", "dönem", "amount", "current period"
+    }
+
+    def norm(x: Any) -> str:
+        return normalize_text(x)
+
+    for r in range(1, min(ws.max_row, 80) + 1):
+        row_vals = [ws.cell(r, c).value for c in range(1, min(ws.max_column, 40) + 1)]
+        normed = [norm(x) for x in row_vals]
+
+        desc_col = None
+        for c, h in enumerate(normed, start=1):
+            if h in desc_candidates:
+                desc_col = c
+                break
+            if "aciklama" in h or "açıklama" in h or ("hesap" in h and "adi" in h):
+                desc_col = c
+                break
+
+        if not desc_col:
+            continue
+
+        value_col = None
+        for c, h in enumerate(normed, start=1):
+            if h in value_candidates:
+                value_col = c
+                break
+
+        # Yıl kolonu (2024/2023 gibi)
+        if value_col is None:
+            for c, raw in enumerate(row_vals, start=1):
+                if isinstance(raw, int) and 1900 <= raw <= 2200:
+                    value_col = c
+                    break
+                if isinstance(raw, float) and 1900 <= int(raw) <= 2200:
+                    value_col = c
+                    break
+                if isinstance(raw, str) and raw.strip().isdigit():
+                    iv = int(raw.strip())
+                    if 1900 <= iv <= 2200:
+                        value_col = c
+                        break
+
+        if value_col:
+            return (r, desc_col, value_col)
+
+    return None
+
+
+def _parse_income_sheet_flexible(ws) -> Tuple[Dict[str, float], List[Dict[str, Any]]]:
+    """
+    KALEM şartı olmadan gelir tablosu okur.
+    """
+    hdr = _find_income_header(ws)
+    if not hdr:
+        raise ValueError("Gelir sheet'inde açıklama+tutar header'ı bulunamadı (esnek parser).")
+
+    header_row, desc_col, value_col = hdr
+
+    out: Dict[str, float] = {}
+    log: List[Dict[str, Any]] = []
+
+    def is_noise(name: str) -> bool:
+        n = normalize_text(name)
+        if not n:
+            return True
+        if n in {"toplam", "genel toplam", "aciklama", "açıklama", "kalem", "tutar"}:
+            return True
+        if n.startswith("genel toplam") or n.startswith("toplam"):
+            return True
+        return False
+
+    empty_streak = 0
+    for r in range(header_row + 1, ws.max_row + 1):
+        raw_name = ws.cell(r, desc_col).value
+        raw_val = ws.cell(r, value_col).value
+
+        if raw_name is None and raw_val is None:
+            empty_streak += 1
+            if empty_streak >= 25:
+                break
+            continue
+        empty_streak = 0
+
+        if raw_name is None:
+            continue
+
+        name = str(raw_name).strip()
+        if not name or is_noise(name):
+            continue
+
+        val = _as_float(raw_val)
+        if abs(val) < 1e-6:
+            continue
+
+        key = map_item_to_key(name)
+        if key:
+            out[key] = out.get(key, 0.0) + float(val)
+
+        log.append({
+            "raw": name,
+            "norm": normalize_text(name),
+            "key": key,
+            "key_label": explain_key(key) if key else None,
+            "value": float(val),
+        })
+
+    return out, log
+
+
+def _merge_income(preferred: Dict[str, float], fallback: Dict[str, float]) -> Dict[str, float]:
+    """
+    preferred (gelir sheet) varsa onu kullan, yoksa fallback (mizan).
+    0 ise override etme.
+    """
+    merged = dict(fallback or {})
+    for k, v in (preferred or {}).items():
+        if v is None:
+            continue
+        vv = float(v)
+        if abs(vv) < 1e-6:
+            continue
+        merged[k] = vv
+    return merged
 
 
 # ============================================================
@@ -427,26 +593,43 @@ def parse_financials_xlsx(xlsx_path: str) -> dict:
         tb_rows = _parse_trial_balance_sheet(tb_ws)
         bs_canon = _trial_balance_to_canonical(tb_rows)
 
+        # ✅ Mizan'dan fallback P&L
+        inc_fallback = _trial_balance_to_income_statement(tb_rows)
+
+        # ✅ Gelir sheet varsa: önce esnek parser dene, olmadı legacy KALEM dene
+        inc_preferred: Dict[str, float] = {}
+        is_log: List[Dict[str, Any]] = []
+        is_items: List[Tuple[str, float]] = []
+        is_year = None
+        income_mode = "trial_balance_only"
+
         if SHEET_IS in wb.sheetnames:
             ws_is = wb[SHEET_IS]
-            is_headers = _find_kalem_headers(ws_is)
-            if not is_headers:
-                inc = _trial_balance_to_income_statement(tb_rows)
-                is_year = None
-                is_items = []
-                is_log = []
-            else:
-                hr, kc = is_headers[0]
-                years = _year_cols_from_header(ws_is, hr, kc)
-                is_year, vc = years[-1] if years else (None, kc + 1)
-                next_hr = is_headers[1][0] if len(is_headers) > 1 else ws_is.max_row + 1
-                is_items = _block_rows(ws_is, start_row=hr + 1, end_row=next_hr - 1, kalem_col=kc, value_col=vc)
-                inc, is_log = _items_to_canonical(is_items)
-        else:
-            inc = _trial_balance_to_income_statement(tb_rows)
-            is_year = None
-            is_items = []
-            is_log = []
+
+            # 1) Esnek parser (KALEM şartı yok)
+            try:
+                if _looks_like_income_sheet(ws_is):
+                    inc_preferred, is_log = _parse_income_sheet_flexible(ws_is)
+                    if inc_preferred:
+                        income_mode = "income_sheet_flexible"
+            except Exception:
+                inc_preferred, is_log = {}, []
+
+            # 2) Esnek boşsa legacy KALEM parser dene
+            if not inc_preferred:
+                is_headers = _find_kalem_headers(ws_is)
+                if is_headers:
+                    hr, kc = is_headers[0]
+                    years = _year_cols_from_header(ws_is, hr, kc)
+                    is_year, vc = years[-1] if years else (None, kc + 1)
+                    next_hr = is_headers[1][0] if len(is_headers) > 1 else ws_is.max_row + 1
+                    is_items = _block_rows(ws_is, start_row=hr + 1, end_row=next_hr - 1, kalem_col=kc, value_col=vc)
+                    inc_preferred, is_log = _items_to_canonical(is_items)
+                    if inc_preferred:
+                        income_mode = "income_sheet_legacy_kalem"
+
+        # ✅ Merge: gelir sheet > mizan
+        inc = _merge_income(inc_preferred, inc_fallback)
 
         return {
             "year_bs": None,
@@ -457,11 +640,13 @@ def parse_financials_xlsx(xlsx_path: str) -> dict:
             "income_statement": inc,
             "mapping_log": {
                 "mode": "trial_balance",
+                "income_mode": income_mode,
                 "trial_balance_rows": [{"code": r.code, "name": r.name, "balance": r.balance} for r in tb_rows],
                 "income_statement_mapping": is_log,
             },
         }
 
+    # Legacy: BILANCO/GELIR
     if SHEET_BS not in wb.sheetnames or SHEET_IS not in wb.sheetnames:
         raise ValueError("Bu Excel’de mizan bulunamadı; ayrıca BILANCO/GELIR sheet’leri de yok.")
 
@@ -491,6 +676,7 @@ def parse_financials_xlsx(xlsx_path: str) -> dict:
 
     bs_year = max(bs_years_found) if bs_years_found else None
 
+    # GELIR legacy
     is_headers = _find_kalem_headers(ws_is)
     if not is_headers:
         raise ValueError("GELIR sheet içinde 'KALEM' başlığı bulunamadı.")
