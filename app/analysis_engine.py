@@ -34,7 +34,6 @@ def _as_float(v: Any) -> float:
 # ============================================================
 
 # TDHP kontra ( - ) çalışan 3-haneli hesaplar (minimum kritik liste)
-# Not: İstersen bunu ayrı bir tdhp_rules.py'den import edebiliriz; şimdilik self-contained.
 CONTRA_3DIGIT = {
     103, 119, 122, 129, 137, 139, 158, 199,
     222, 224, 229, 237, 239,
@@ -65,9 +64,9 @@ def _is_contra_name(name: str) -> bool:
 class TBRow:
     code: str
     name: str
-    balance: float          # signed: mizan bakiyesi (borç-alacak gibi)
-    code3: int              # first 3 digits
-    digits_len: int         # kaç digit (100 vs 10001 vs 10001001)
+    balance: float
+    code3: int
+    digits_len: int
 
 
 def _looks_like_trial_balance(ws) -> bool:
@@ -131,7 +130,6 @@ def _parse_trial_balance_sheet(ws) -> List[TBRow]:
         if code_txt == "":
             continue
 
-        # sadece digitleri al
         code_digits = "".join(ch for ch in code_txt if ch.isdigit())
         if len(code_digits) < 3:
             continue
@@ -180,16 +178,6 @@ def _pick_trial_balance_ws(wb) -> Optional[Any]:
 
 
 def _consolidate_to_3digit(rows: List[TBRow]) -> Dict[int, float]:
-    """
-    ✅ Ana kural:
-    - Eğer bir 3-haneli hesap mizanda "aynen" varsa (digits_len == 3),
-      o hesabın toplamını SADECE o satırlardan al (alt kırılımları ignore et).
-    - Yoksa (3-haneli satır yoksa) alt kırılımları topla (10001,1000101..).
-    ✅ Kontra (-) hesaplar:
-    - 3-haneli kod CONTRA_3DIGIT içindeyse veya satır adında (-) varsa,
-      katkı her zaman negatif olacak şekilde normalize edilir.
-    """
-    # code3 -> list[TBRow]
     bucket: Dict[int, List[TBRow]] = {}
     for r in rows:
         bucket.setdefault(r.code3, []).append(r)
@@ -204,7 +192,6 @@ def _consolidate_to_3digit(rows: List[TBRow]) -> Dict[int, float]:
         for x in use_rows:
             v = float(x.balance)
 
-            # kontra düzeltmesi (isim veya kural)
             if (code3 in CONTRA_3DIGIT) or _is_contra_name(x.name):
                 v = -abs(v)
 
@@ -223,55 +210,65 @@ def _sum_3set(b3: Dict[int, float], codes: List[int]) -> float:
     return sum(float(b3.get(c, 0.0) or 0.0) for c in codes)
 
 
+def _sum_prefix(rows: List[TBRow], prefixes: List[str]) -> float:
+    """
+    ✅ NameError fix + Çifte saymayı engeller:
+    - Önce 3-haneli konsolidasyon (b3) üzerinden toplar.
+    - Prefix "60" gibi 2 haneliyse, 600-609 aralığı gibi davranır.
+    - Prefix "780" gibi 3 haneliyse doğrudan b3[780] kullanır.
+    """
+    b3 = _consolidate_to_3digit(rows)
+
+    total = 0.0
+    for p in prefixes:
+        pd = "".join(ch for ch in str(p) if ch.isdigit())
+        if not pd:
+            continue
+
+        if len(pd) == 1:
+            lo = int(pd) * 100
+            hi = lo + 99
+            total += _sum_3range(b3, lo, hi)
+        elif len(pd) == 2:
+            lo = int(pd) * 10
+            lo = lo * 10  # 2 digit => 600-699 gibi düşün: 60 -> 600-699
+            hi = lo + 99
+            total += _sum_3range(b3, lo, hi)
+        else:
+            k = int(pd[:3])
+            total += float(b3.get(k, 0.0) or 0.0)
+
+    return total
+
+
 def _trial_balance_to_canonical(rows: List[TBRow]) -> Dict[str, float]:
-    """
-    Tek Düzen kodlarına göre canonical BS üretir.
-    - Varlıklar: 100-299
-    - KVYK: 300-399
-    - UVYK: 400-499
-    - Özkaynak: 500-599
-    İşaret:
-    - Mizanda borçlar genelde negatif gelebilir. Biz raporda pozitif büyüklük isteriz -> abs ile normalize.
-    """
     bs: Dict[str, float] = {}
 
     b3 = _consolidate_to_3digit(rows)
 
-    # Dönen varlıklar: 100-199
     current_assets = _sum_3range(b3, 100, 199)
-
-    # Duran varlıklar: 200-299
     non_current_assets = _sum_3range(b3, 200, 299)
-
     total_assets = current_assets + non_current_assets
 
-    # Alt kırılımlar
-    cash = _sum_3set(b3, [100, 101, 102, 108, 103])  # 103 zaten kontra -> negatif katkı
+    cash = _sum_3set(b3, [100, 101, 102, 108, 103])
     trade_ar = _sum_3range(b3, 120, 129)
     other_ar = _sum_3range(b3, 131, 139)
     inv = _sum_3set(b3, [150, 151, 152, 153, 157, 158, 159, 170, 171, 172, 173, 178, 179])
     prepaid = float(b3.get(180, 0.0) or 0.0)
     other_ca = _sum_3set(b3, [190, 191, 192, 193, 195, 196, 197, 198, 199])
 
-    # KVYK: 300-399 (pozitif büyüklük)
     cl_signed = _sum_3range(b3, 300, 399)
     current_liabilities = abs(cl_signed)
 
-    # UVYK: 400-499
     ll_signed = _sum_3range(b3, 400, 499)
     long_liabilities = abs(ll_signed)
 
-    # Finansal borçlar
     st_fin_debt = abs(_sum_3set(b3, [300, 301, 303, 304, 305, 306, 309, 302, 308]))
     lt_fin_debt = abs(_sum_3set(b3, [400, 401, 405, 407, 409, 402, 408]))
 
-    # Ticari borçlar
     trade_payables = abs(_sum_3range(b3, 320, 329))
-
-    # Vergi+SGK vb
     tax_liab = abs(_sum_3set(b3, [360, 361, 368, 369, 391, 392]))
 
-    # Özkaynak: 500-599
     eq_signed = _sum_3range(b3, 500, 599)
     equity = abs(eq_signed)
 
@@ -297,32 +294,27 @@ def _trial_balance_to_canonical(rows: List[TBRow]) -> Dict[str, float]:
     bs["equity_total"] = equity
     bs["total_liabilities"] = current_liabilities + long_liabilities
 
-    # Debug: 3-digit konsolide map (istersen kaldır)
-    bs["_tb_3digit_map"] = 0.0  # placeholder, serialize etmiyorsan sorun değil
-
     return bs
 
 
 def _trial_balance_to_income_statement(rows: List[TBRow]) -> Dict[str, float]:
-    """
-    Mizan’dan P&L üretimi (gelir tablosu sheet’i yoksa fallback).
-    60..69 aralığı
-    """
     inc: Dict[str, float] = {}
-    b3 = _consolidate_to_3digit(rows)
 
-    # Gelirler credit (-) gelebilir → abs ile normalize edip “pozitif gelir” yapalım
-    gross_sales = abs(_sum_3range(b3, 600, 609))
-    discounts = abs(_sum_3range(b3, 610, 619))
+    gross_sales = -_sum_prefix(rows, ["60"])
+    discounts = _sum_prefix(rows, ["61"])
     revenue_net = gross_sales - discounts
 
-    cogs = abs(_sum_3range(b3, 620, 629))
-    opex = abs(_sum_3range(b3, 630, 639))
+    cogs = _sum_prefix(rows, ["62"])
+    opex = _sum_prefix(rows, ["63"])
 
-    other_op_income = abs(_sum_3range(b3, 640, 649))
-    other_op_exp = abs(_sum_3range(b3, 653, 659))
+    other_op_income = -_sum_prefix(rows, ["64"])
+    other_op_exp = _sum_prefix(rows, ["65"])
 
-    fin_exp = abs(_sum_3range(b3, 660, 669))
+    fin_exp_66 = _sum_prefix(rows, ["66"])
+    fin_exp_7a = _sum_prefix(rows, ["780", "781", "782"])
+    fin_exp_7b = _sum_prefix(rows, ["797"])
+
+    finance_expense = fin_exp_66 + fin_exp_7a + fin_exp_7b
 
     gross_profit = revenue_net - cogs
     ebit = gross_profit - opex + other_op_income - other_op_exp
@@ -332,7 +324,7 @@ def _trial_balance_to_income_statement(rows: List[TBRow]) -> Dict[str, float]:
     inc["gross_profit"] = gross_profit
     inc["opex"] = opex
     inc["ebit"] = ebit
-    inc["finance_expense"] = fin_exp
+    inc["finance_expense"] = finance_expense
     inc["interest_expense"] = 0.0
 
     return inc
@@ -430,13 +422,11 @@ def _items_to_canonical(items: List[Tuple[str, float]]) -> Tuple[Dict[str, float
 def parse_financials_xlsx(xlsx_path: str) -> dict:
     wb = load_workbook(xlsx_path, data_only=True)
 
-    # 1) Öncelik: Mizan varsa koda göre oku
     tb_ws = _pick_trial_balance_ws(wb)
     if tb_ws is not None:
         tb_rows = _parse_trial_balance_sheet(tb_ws)
         bs_canon = _trial_balance_to_canonical(tb_rows)
 
-        # Gelir sheet’i varsa onu kullan, yoksa mizandan üret
         if SHEET_IS in wb.sheetnames:
             ws_is = wb[SHEET_IS]
             is_headers = _find_kalem_headers(ws_is)
@@ -472,7 +462,6 @@ def parse_financials_xlsx(xlsx_path: str) -> dict:
             },
         }
 
-    # 2) Mizan yoksa: eski BILANCO/GELIR akışı
     if SHEET_BS not in wb.sheetnames or SHEET_IS not in wb.sheetnames:
         raise ValueError("Bu Excel’de mizan bulunamadı; ayrıca BILANCO/GELIR sheet’leri de yok.")
 
@@ -563,13 +552,11 @@ def analyze_financials(fin: dict, sector: str) -> dict:
     fin_exp = g(inc, "finance_expense")
     interest_exp = g(inc, "interest_expense")
 
-    # Fallback: toplamlar yoksa (legacy parse)
     if ca <= 0:
         ca = cash + ar + inv + g(bs, "other_current_assets") + g(bs, "other_receivables") + g(bs, "prepaid_expenses")
     if cl <= 0:
         cl = g(bs, "trade_payables") + debt_st + g(bs, "tax_liabilities") + g(bs, "provisions_st") + g(bs, "lease_liabilities_st")
 
-    # Oranlar
     current_ratio = (ca / cl) if cl else None
     quick_ratio = ((ca - inv) / cl) if cl else None
 
