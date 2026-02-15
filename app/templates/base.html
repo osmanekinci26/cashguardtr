@@ -5,7 +5,7 @@
   <title>{{ title or "CashGuard | cashguardtr.com" }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
-  <link rel="stylesheet" href="/static/style.css?v=2">
+  <link rel="stylesheet" href="/static/style.css?v=3">
 </head>
 
 <body>
@@ -34,5 +34,65 @@
       © {{ year }} CashGuard TR — cashguardtr.com
     </div>
   </div>
+
+  <!-- ===== WhatsApp Live Support (Global) ===== -->
+  <div class="wa-widget" id="waWidget" aria-live="polite">
+    <button class="wa-fab" id="waFab" type="button" aria-label="WhatsApp canlı destek">
+      WhatsApp
+    </button>
+
+    <div class="wa-panel" id="waPanel" role="dialog" aria-label="WhatsApp canlı destek paneli">
+      <div class="wa-head">
+        <div>
+          <div class="wa-title">Canlı Destek</div>
+          <div class="wa-sub">Genelde 5 dk içinde dönüş.</div>
+        </div>
+        <button class="wa-close" id="waClose" type="button" aria-label="Kapat">✕</button>
+      </div>
+
+      <div class="wa-body">
+        <div class="wa-text">Merhaba 👋 Nasıl yardımcı olalım?</div>
+
+        <a class="wa-cta" target="_blank" rel="noopener"
+           href="https://wa.me/905316323779?text=Merhaba%20CashGuard%20ile%20ilgili%20destek%20almak%20istiyorum.">
+          WhatsApp’ta yaz
+        </a>
+
+        <div class="wa-note">Not: Kişisel veri paylaşmayın.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const fab = document.getElementById('waFab');
+      const panel = document.getElementById('waPanel');
+      const close = document.getElementById('waClose');
+
+      function toggle(open){
+        if (!panel) return;
+        panel.classList.toggle('open', open);
+      }
+
+      if (fab) fab.addEventListener('click', () => {
+        toggle(!panel.classList.contains('open'));
+      });
+
+      if (close) close.addEventListener('click', () => toggle(false));
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') toggle(false);
+      });
+
+      // dışarı tıklayınca kapat (opsiyonel ama UX iyi)
+      document.addEventListener('click', (e) => {
+        if (!panel || !fab) return;
+        const widget = document.getElementById('waWidget');
+        if (!widget) return;
+        if (!widget.contains(e.target) && panel.classList.contains('open')) toggle(false);
+      });
+    })();
+  </script>
+  <!-- ===== /WhatsApp Live Support (Global) ===== -->
 </body>
 </html>
