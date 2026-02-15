@@ -5,6 +5,9 @@ import os
 import json
 import shutil
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from email.message import EmailMessage
 import smtplib
 import ssl
@@ -47,6 +50,10 @@ SECTOR_LABELS = {
 
 LEAD_EMAIL = "rapor@cashguardtr.com"
 
+
+# =========================
+# SMTP MAIL SENDER (supports 465 SSL + 587 STARTTLS)
+# =========================
 def send_email_smtp(
     *,
     to_email: str,
@@ -55,19 +62,13 @@ def send_email_smtp(
     attachment_bytes: bytes | None = None,
     attachment_filename: str | None = None,
 ):
-    """
-    SMTP ile e-posta gönderir.
-    ENV:
-      SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD
-      SMTP_FROM (örn: rapor@cashguardtr.com)
-    """
     host = os.getenv("SMTP_HOST")
     port = int(os.getenv("SMTP_PORT", "587"))
     user = os.getenv("SMTP_USER")
     password = os.getenv("SMTP_PASSWORD")
-    from_email = os.getenv("SMTP_FROM", user)
+    from_email = os.getenv("SMTP_FROM") or user
 
-    if not host or not user or not password or not from_email:
+    if not host or not user or not password:
         raise RuntimeError("SMTP env eksik: SMTP_HOST/SMTP_USER/SMTP_PASSWORD/SMTP_FROM")
 
     msg = EmailMessage()
@@ -84,15 +85,25 @@ def send_email_smtp(
             filename=attachment_filename,
         )
 
-    context = ssl.create_default_context()
-    with smtplib.SMTP(host, port, timeout=25) as server:
-        server.ehlo()
-        server.starttls(context=context)
-        server.login(user, password)
-        server.send_message(msg)
+    ctx = ssl.create_default_context()
+
+    # 465 => SSL, 587 => STARTTLS
+    if port == 465:
+        with smtplib.SMTP_SSL(host, port, context=ctx, timeout=25) as server:
+            server.login(user, password)
+            server.send_message(msg)
+    else:
+        with smtplib.SMTP(host, port, timeout=25) as server:
+            server.ehlo()
+            server.starttls(context=ctx)
+            server.ehlo()
+            server.login(user, password)
+            server.send_message(msg)
+
 
 def _common_ctx(request: Request, title: str):
     return {"request": request, "title": title, "year": datetime.now().year}
+
 
 def _sanitize_sector(sector: str | None) -> str:
     s = (sector or "defense").strip().lower()
@@ -107,6 +118,7 @@ def landing(request: Request):
     ctx = _common_ctx(request, "CashGuard TR | cashguardtr.com")
     return templates.TemplateResponse("index.html", ctx)
 
+
 @app.get("/check", response_class=HTMLResponse)
 def check(request: Request, sector: str = "defense"):
     sector = _sanitize_sector(sector)
@@ -115,21 +127,19 @@ def check(request: Request, sector: str = "defense"):
     ctx.update({"sector": sector, "sector_label": sector_label})
     return templates.TemplateResponse("check.html", ctx)
 
+
 @app.post("/result", response_class=HTMLResponse)
 def result(
     request: Request,
     sector: str = Form("defense"),
-
     collection_days: int = Form(...),
     payable_days: int = Form(...),
     fx_debt_ratio: int = Form(...),
     fx_revenue_ratio: int = Form(...),
     cash_buffer_months: int = Form(...),
     top_customer_share: int = Form(...),
-
     top_customer_2m_gap_month: int = Form(...),
     unplanned_deferral_12m: str = Form(...),
-
     delay_issue: str = Form(...),
     short_debt_ratio: int = Form(...),
     limit_pressure: str = Form(...),
@@ -162,7 +172,6 @@ def result(
             "score": score,
             "level": level,
             "messages": messages,
-
             "collection_days": collection_days,
             "payable_days": payable_days,
             "fx_debt_ratio": fx_debt_ratio,
@@ -175,7 +184,6 @@ def result(
             "short_debt_ratio": short_debt_ratio,
             "limit_pressure": limit_pressure,
             "hedging": hedging,
-
             # email feedback placeholders (result.html gösterebilir)
             "email_sent": False,
             "email_to": "",
@@ -184,26 +192,23 @@ def result(
     )
     return templates.TemplateResponse("result.html", ctx)
 
+
 @app.post("/result/pdf")
 def result_pdf(
     request: Request,
     sector: str = Form("defense"),
-
     collection_days: int = Form(...),
     payable_days: int = Form(...),
     fx_debt_ratio: int = Form(...),
     fx_revenue_ratio: int = Form(...),
     cash_buffer_months: int = Form(...),
     top_customer_share: int = Form(...),
-
     top_customer_2m_gap_month: int = Form(...),
     unplanned_deferral_12m: str = Form(...),
-
     delay_issue: str = Form(...),
     short_debt_ratio: int = Form(...),
     limit_pressure: str = Form(...),
     hedging: str = Form(...),
-
     company: str = Form(""),
 ):
     sector = _sanitize_sector(sector)
@@ -254,26 +259,23 @@ def result_pdf(
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
+
 @app.post("/result/email", response_class=HTMLResponse)
 def result_email(
     request: Request,
     sector: str = Form("defense"),
-
     collection_days: int = Form(...),
     payable_days: int = Form(...),
     fx_debt_ratio: int = Form(...),
     fx_revenue_ratio: int = Form(...),
     cash_buffer_months: int = Form(...),
     top_customer_share: int = Form(...),
-
     top_customer_2m_gap_month: int = Form(...),
     unplanned_deferral_12m: str = Form(...),
-
     delay_issue: str = Form(...),
     short_debt_ratio: int = Form(...),
     limit_pressure: str = Form(...),
     hedging: str = Form(...),
-
     company: str = Form(""),
     email: str = Form(...),
 ):
@@ -369,7 +371,6 @@ def result_email(
             "score": score,
             "level": level,
             "messages": messages,
-
             "collection_days": collection_days,
             "payable_days": payable_days,
             "fx_debt_ratio": fx_debt_ratio,
@@ -382,7 +383,6 @@ def result_email(
             "short_debt_ratio": short_debt_ratio,
             "limit_pressure": limit_pressure,
             "hedging": hedging,
-
             "email_sent": email_sent,
             "email_to": email,
             "email_error": email_error,
@@ -390,30 +390,36 @@ def result_email(
     )
     return templates.TemplateResponse("result.html", ctx)
 
+
 @app.get("/about", response_class=HTMLResponse)
 def about(request: Request):
     ctx = _common_ctx(request, "Hakkında | CashGuard TR")
     return templates.TemplateResponse("about.html", ctx)
+
 
 @app.get("/team", response_class=HTMLResponse)
 def team(request: Request):
     ctx = _common_ctx(request, "Biz Kimiz | CashGuard TR")
     return templates.TemplateResponse("team.html", ctx)
 
+
 @app.get("/services", response_class=HTMLResponse)
 def services(request: Request):
     ctx = _common_ctx(request, "Hizmetlerimiz | CashGuard TR")
     return templates.TemplateResponse("services.html", ctx)
+
 
 @app.get("/contact", response_class=HTMLResponse)
 def contact(request: Request):
     ctx = _common_ctx(request, "İletişim | CashGuard TR")
     return templates.TemplateResponse("contact.html", ctx)
 
+
 @app.get("/why-cash", response_class=HTMLResponse)
 def why_cash(request: Request):
     ctx = _common_ctx(request, "Nakit Neden Korunmalı? | CashGuard TR")
     return templates.TemplateResponse("why_cash.html", ctx)
+
 
 @app.get("/health")
 def health():
@@ -428,6 +434,7 @@ def _admin_ctx(request: Request, title: str, admin_email: str | None = None, err
     ctx.update({"admin_email": admin_email, "error": error})
     return ctx
 
+
 def _get_admin_email_from_cookie(request: Request) -> str | None:
     token = request.cookies.get("cg_admin")
     if not token:
@@ -437,6 +444,7 @@ def _get_admin_email_from_cookie(request: Request) -> str | None:
         return None
     return data.get("email")
 
+
 def require_admin(request: Request, db: Session = Depends(get_db)) -> str:
     email = _get_admin_email_from_cookie(request)
     if not email:
@@ -445,6 +453,7 @@ def require_admin(request: Request, db: Session = Depends(get_db)) -> str:
     if not user:
         raise PermissionError("Unknown user")
     return email
+
 
 def ensure_initial_admin(db: Session):
     """
@@ -489,6 +498,7 @@ def admin_home(request: Request, db: Session = Depends(get_db)):
     ctx.update({"companies": companies})
     return templates.TemplateResponse("admin_companies.html", ctx)
 
+
 @app.post("/admin/login")
 def admin_login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
     ensure_initial_admin(db)
@@ -503,11 +513,13 @@ def admin_login(request: Request, email: str = Form(...), password: str = Form(.
     resp.set_cookie("cg_admin", token, httponly=True, samesite="lax", secure=True)
     return resp
 
+
 @app.get("/admin/logout")
 def admin_logout():
     resp = RedirectResponse(url="/admin", status_code=302)
     resp.delete_cookie("cg_admin")
     return resp
+
 
 @app.post("/admin/companies/create")
 def admin_company_create(
@@ -527,6 +539,7 @@ def admin_company_create(
     db.commit()
     return RedirectResponse(url=f"/admin/companies/{c.id}", status_code=302)
 
+
 @app.get("/admin/companies/{company_id}", response_class=HTMLResponse)
 def admin_company_page(request: Request, company_id: int, db: Session = Depends(get_db)):
     try:
@@ -543,6 +556,7 @@ def admin_company_page(request: Request, company_id: int, db: Session = Depends(
     ctx = _admin_ctx(request, f"{company.name} | Admin", admin_email=email)
     ctx.update({"company": company, "uploads": uploads})
     return templates.TemplateResponse("admin_company.html", ctx)
+
 
 @app.post("/admin/companies/{company_id}/upload")
 def admin_upload_excel(
@@ -573,6 +587,7 @@ def admin_upload_excel(
     db.commit()
 
     return RedirectResponse(url=f"/admin/companies/{company_id}", status_code=302)
+
 
 @app.post("/admin/companies/{company_id}/analyze")
 def admin_analyze(request: Request, company_id: int, db: Session = Depends(get_db)):
@@ -618,6 +633,7 @@ def admin_analyze(request: Request, company_id: int, db: Session = Depends(get_d
 
     return RedirectResponse(url=f"/admin/analyses/{analysis.id}", status_code=302)
 
+
 @app.get("/admin/analyses/{analysis_id}", response_class=HTMLResponse)
 def admin_analysis_view(request: Request, analysis_id: int, db: Session = Depends(get_db)):
     try:
@@ -634,13 +650,9 @@ def admin_analysis_view(request: Request, analysis_id: int, db: Session = Depend
 
     sector_label = SECTOR_LABELS.get(company.sector, company.sector)
     ctx = _admin_ctx(request, "Analiz | Admin", admin_email=email)
-    ctx.update({
-        "company": company,
-        "sector_label": sector_label,
-        "bullets": data.get("bullets", [])[:10],
-        "analysis_id": analysis.id
-    })
+    ctx.update({"company": company, "sector_label": sector_label, "bullets": data.get("bullets", [])[:10], "analysis_id": analysis.id})
     return templates.TemplateResponse("admin_analysis.html", ctx)
+
 
 @app.get("/admin/analyses/{analysis_id}/pdf")
 def admin_analysis_pdf(request: Request, analysis_id: int, db: Session = Depends(get_db)):
@@ -662,11 +674,7 @@ def admin_analysis_pdf(request: Request, analysis_id: int, db: Session = Depends
         pdf_bytes = build_admin_analysis_pdf(company.name, sector_label, data.get("bullets", [])[:10])
 
     filename = f"cashguard-admin-analiz-{analysis_id}.pdf"
-    return StreamingResponse(
-        BytesIO(pdf_bytes),
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
+    return StreamingResponse(BytesIO(pdf_bytes), media_type="application/pdf", headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 
 
 # =========================
@@ -705,20 +713,20 @@ def admin_company_mapping_debug(request: Request, company_id: int, db: Session =
         return templates.TemplateResponse("admin_mapping_debug.html", ctx)
 
     ctx = _admin_ctx(request, "Mapping Debug | Admin", admin_email=email)
-    ctx.update({
-        "company": company,
-        "source": "last_upload",
-        "upload_filename": last_upload.filename,
-        "upload_path": last_upload.path,
-
-        "bs_log": mlog.get("balance_sheet", []),
-        "is_log": mlog.get("income_statement", []),
-        "bs_unmapped": mlog.get("unmapped_balance_sheet", []),
-        "is_unmapped": mlog.get("unmapped_income_statement", []),
-
-        "year_bs": fin.get("year_bs"),
-        "year_is": fin.get("year_is"),
-    })
+    ctx.update(
+        {
+            "company": company,
+            "source": "last_upload",
+            "upload_filename": last_upload.filename,
+            "upload_path": last_upload.path,
+            "bs_log": mlog.get("balance_sheet", []),
+            "is_log": mlog.get("income_statement", []),
+            "bs_unmapped": mlog.get("unmapped_balance_sheet", []),
+            "is_unmapped": mlog.get("unmapped_income_statement", []),
+            "year_bs": fin.get("year_bs"),
+            "year_is": fin.get("year_is"),
+        }
+    )
     return templates.TemplateResponse("admin_mapping_debug.html", ctx)
 
 
@@ -741,17 +749,17 @@ def admin_analysis_mapping_debug(request: Request, analysis_id: int, db: Session
     mlog = (data.get("mapping_log") or {})
 
     ctx = _admin_ctx(request, "Mapping Debug | Admin", admin_email=email)
-    ctx.update({
-        "company": company,
-        "source": "analysis",
-        "analysis_id": analysis.id,
-
-        "bs_log": mlog.get("balance_sheet", []),
-        "is_log": mlog.get("income_statement", []),
-        "bs_unmapped": mlog.get("unmapped_balance_sheet", []),
-        "is_unmapped": mlog.get("unmapped_income_statement", []),
-
-        "year_bs": (data.get("meta") or {}).get("year_bs"),
-        "year_is": (data.get("meta") or {}).get("year_is"),
-    })
+    ctx.update(
+        {
+            "company": company,
+            "source": "analysis",
+            "analysis_id": analysis.id,
+            "bs_log": mlog.get("balance_sheet", []),
+            "is_log": mlog.get("income_statement", []),
+            "bs_unmapped": mlog.get("unmapped_balance_sheet", []),
+            "is_unmapped": mlog.get("unmapped_income_statement", []),
+            "year_bs": (data.get("meta") or {}).get("year_bs"),
+            "year_is": (data.get("meta") or {}).get("year_is"),
+        }
+    )
     return templates.TemplateResponse("admin_mapping_debug.html", ctx)
