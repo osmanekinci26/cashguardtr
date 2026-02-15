@@ -225,6 +225,8 @@ def _sum_prefix(rows: List[TBRow], prefixes: List[str]) -> float:
             continue
 
         if len(pd) == 1:
+            # "6" gibi -> 600-699 varsayımı yapmayalım; çok muğlak.
+            # Yine de isteyen olursa: 6xx yerine 600-699
             lo = int(pd) * 100
             hi = lo + 99
             total += _sum_3range(b3, lo, hi)
@@ -274,9 +276,6 @@ def _trial_balance_to_canonical(rows: List[TBRow]) -> Dict[str, float]:
     eq_signed = _sum_3range(b3, 500, 599)
     equity = abs(eq_signed)
 
-    # ✅ DSCR için: 303 - Uzun vadeli kredilerin anapara taksitleri vb (12 ay içinde ödenecek)
-    current_portion_lt_debt = abs(float(b3.get(303, 0.0) or 0.0))
-
     bs["cash_and_equivalents"] = cash
     bs["trade_receivables"] = trade_ar
     bs["other_receivables"] = other_ar
@@ -299,9 +298,6 @@ def _trial_balance_to_canonical(rows: List[TBRow]) -> Dict[str, float]:
     bs["equity_total"] = equity
     bs["total_liabilities"] = current_liabilities + long_liabilities
 
-    # ✅ DSCR helper
-    bs["current_portion_long_term_debt"] = current_portion_lt_debt
-
     return bs
 
 
@@ -317,7 +313,6 @@ def _trial_balance_to_income_statement(rows: List[TBRow]) -> Dict[str, float]:
       - Other op income: 64 (credit -> negative) => positive
       - Other op expense: 65 (debit) => positive
       - Finance expense: 66 (debit) OR 780/781/782 OR 797
-      - Depreciation/Amortization: 796 (7/B) => EBITDA için
     """
     inc: Dict[str, float] = {}
 
@@ -337,12 +332,8 @@ def _trial_balance_to_income_statement(rows: List[TBRow]) -> Dict[str, float]:
 
     finance_expense = fin_exp_66 + fin_exp_7a + fin_exp_7b
 
-    # ✅ Amortisman (7/B)
-    dep_amort = _sum_prefix(rows, ["796"])
-
     gross_profit = revenue_net - cogs
     ebit = gross_profit - opex + other_op_income - other_op_exp
-    ebitda = ebit + dep_amort
 
     inc["revenue"] = revenue_net
     inc["cogs"] = cogs
@@ -351,10 +342,6 @@ def _trial_balance_to_income_statement(rows: List[TBRow]) -> Dict[str, float]:
     inc["ebit"] = ebit
     inc["finance_expense"] = finance_expense
     inc["interest_expense"] = 0.0
-
-    # ✅ EBITDA alanları
-    inc["depreciation_amortization"] = dep_amort
-    inc["ebitda"] = ebitda
 
     return inc
 
@@ -742,7 +729,6 @@ def analyze_financials(fin: dict, sector: str) -> dict:
 
     debt_st = g(bs, "short_term_fin_debt")
     debt_lt = g(bs, "long_term_fin_debt")
-    cp_lt = g(bs, "current_portion_long_term_debt")  # ✅ DSCR helper (303)
     equity = g(bs, "equity_total")
     total_assets = g(bs, "total_assets")
 
@@ -751,12 +737,6 @@ def analyze_financials(fin: dict, sector: str) -> dict:
     ebit = g(inc, "ebit")
     fin_exp = g(inc, "finance_expense")
     interest_exp = g(inc, "interest_expense")
-    dep_amort = g(inc, "depreciation_amortization")
-    ebitda = g(inc, "ebitda")
-
-    if ebitda <= 0:
-        # fallback: gelir sheet EBITDA map etmemişse
-        ebitda = ebit + dep_amort if dep_amort else ebit
 
     if ca <= 0:
         ca = cash + ar + inv + g(bs, "other_current_assets") + g(bs, "other_receivables") + g(bs, "prepaid_expenses")
@@ -777,11 +757,6 @@ def analyze_financials(fin: dict, sector: str) -> dict:
     fin_cost = fin_exp if fin_exp else interest_exp
     interest_cover = (ebit / fin_cost) if fin_cost else None
     gross_margin = ((revenue - cogs) / revenue) if revenue else None
-
-    # ✅ DSCR (approx)
-    principal_due_12m = (debt_st + cp_lt) if (debt_st or cp_lt) else 0.0
-    debt_service = (fin_exp or 0.0) + (principal_due_12m or 0.0)
-    dscr = (ebitda / debt_service) if debt_service else None
 
     bullets: List[str] = []
 
@@ -821,12 +796,6 @@ def analyze_financials(fin: dict, sector: str) -> dict:
     if gross_margin is not None:
         bullets.append(f"Brüt marj yaklaşık %{gross_margin*100:.1f}.")
 
-    # ✅ 11. madde: DSCR
-    if dscr is None:
-        bullets.append("DSCR hesaplanamadı (borç servisi=0 veya veri eksik).")
-    else:
-        bullets.append(f"DSCR (yaklaşık): {dscr:.2f} (EBITDA / (Faiz + 12A anapara)).")
-
     bullets.append("Öneri: 13-hafta nakit projeksiyonu + borç vade haritasını tek sayfada izleyelim.")
 
     return {
@@ -850,15 +819,7 @@ def analyze_financials(fin: dict, sector: str) -> dict:
             "cogs": cogs,
             "equity": equity,
             "total_assets": total_assets,
-
-            # ✅ EBITDA & DSCR metrics
-            "depreciation_amortization": dep_amort,
-            "ebitda": ebitda,
-            "current_portion_long_term_debt": cp_lt,
-            "principal_due_12m": principal_due_12m,
-            "debt_service": debt_service,
-            "dscr": dscr,
         },
-        "bullets": bullets[:11],
+        "bullets": bullets[:10],
         "mapping_log": fin.get("mapping_log", {}),
     }

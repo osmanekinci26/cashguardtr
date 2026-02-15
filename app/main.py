@@ -416,9 +416,9 @@ def admin_analyze(request: Request, company_id: int, db: Session = Depends(get_d
     db.add(analysis)
     db.commit()
 
-    # ✅ PDF üretip dosyaya yaz (11 madde)
+    # PDF üretip dosyaya yaz (isteğe bağlı)
     sector_label = SECTOR_LABELS.get(company.sector, company.sector)
-    pdf_bytes = build_admin_analysis_pdf(company.name, sector_label, result.get("bullets", [])[:11])
+    pdf_bytes = build_admin_analysis_pdf(company.name, sector_label, result.get("bullets", [])[:10])
     pdf_path = UPLOAD_DIR / f"analysis_{analysis.id}.pdf"
     pdf_path.write_bytes(pdf_bytes)
 
@@ -446,7 +446,7 @@ def admin_analysis_view(request: Request, analysis_id: int, db: Session = Depend
     ctx.update({
         "company": company,
         "sector_label": sector_label,
-        "bullets": data.get("bullets", [])[:11],  # ✅ 11 madde
+        "bullets": data.get("bullets", [])[:10],
         "analysis_id": analysis.id
     })
     return templates.TemplateResponse("admin_analysis.html", ctx)
@@ -468,7 +468,7 @@ def admin_analysis_pdf(request: Request, analysis_id: int, db: Session = Depends
         company = db.query(Company).filter(Company.id == analysis.company_id).first()
         data = json.loads(analysis.result_json)
         sector_label = SECTOR_LABELS.get(company.sector, company.sector)
-        pdf_bytes = build_admin_analysis_pdf(company.name, sector_label, data.get("bullets", [])[:11])  # ✅ 11 madde
+        pdf_bytes = build_admin_analysis_pdf(company.name, sector_label, data.get("bullets", [])[:10])
 
     filename = f"cashguard-admin-analiz-{analysis_id}.pdf"
     return StreamingResponse(
