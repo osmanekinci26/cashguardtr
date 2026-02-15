@@ -1,182 +1,167 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ title }}</title>
-  <link rel="stylesheet" href="/static/style.css?v=1003">
-</head>
-<body>
-  <div class="container">
+{% extends "base.html" %}
 
-    <div class="nav">
-      <!-- BRAND: desktop yazı, mobil logo -->
-      <div class="brand">
-        <a href="/" class="brand-link">
-       <img
-  src="/static/icon-64.png"
-  srcset="/static/icon-128.png 2x, /static/icon-512.png 3x"
-  alt="C"
-  class="brand-logo"
-  width="28"
-  height="28"
-/>
-
-
-          <span class="brand-text">CashGuard</span>
-        </a>
-      </div>
-
-      <!-- RIGHT SIDE -->
-      <div class="nav-right">
-
-        <!-- SEKTÖR SEÇ -->
-        <div class="sector-picker">
-
-          <div class="sector-label">
-            <span class="sector-badge">SEKTÖR SEÇ</span>
-            <span class="sector-arrow">➜</span>
-          </div>
-
-          <form action="/check" method="get" class="sector-form">
-            <select name="sector" onchange="this.form.submit()" class="sector-select">
-              <option value="defense" {% if sector=='defense' %}selected{% endif %}>Savunma Sanayi</option>
-              <option value="construction" {% if sector=='construction' %}selected{% endif %}>İnşaat</option>
-              <option value="electrical" {% if sector=='electrical' %}selected{% endif %}>Elektrik Taahhüt</option>
-              <option value="energy" {% if sector=='energy' %}selected{% endif %}>Enerji</option>
-            </select>
-
-            <noscript>
-              <button class="btn secondary" type="submit">Seç</button>
-            </noscript>
-          </form>
-
-        </div>
-
-        <a class="btn secondary" href="/">Ana Sayfa</a>
-      </div>
+{% block content %}
+  <div class="nav">
+    <!-- BRAND: desktop yazı, mobil logo -->
+    <div class="brand">
+      <a href="/" class="brand-link">
+        <img
+          src="/static/icon-64.png"
+          srcset="/static/icon-128.png 2x, /static/icon-512.png 3x"
+          alt="C"
+          class="brand-logo"
+          width="28"
+          height="28"
+        />
+        <span class="brand-text">CashGuard</span>
+      </a>
     </div>
 
-    <div class="card">
-      <h2>{{ sector_label }} Risk Testi</h2>
-      <p><strong>cashguardtr.com</strong> — Bankaya gitmeden önce kırmızı/sarı/yeşil görün.</p>
+    <!-- RIGHT SIDE -->
+    <div class="nav-right">
 
-      <form action="/result" method="post">
-        <!-- sektörü sakla -->
-        <input type="hidden" name="sector" value="{{ sector }}">
-
-        <div class="grid">
-
-          <div class="field">
-            <label>1) Ortalama tahsilat (gün)</label>
-            <input type="number" name="collection_days" min="0" required>
-          </div>
-
-          <div class="field">
-            <label>2) Ortalama ödeme (gün)</label>
-            <input type="number" name="payable_days" min="0" required>
-          </div>
-
-          <div class="field">
-            <label>3) Döviz borcu / toplam borç (%)</label>
-            <input type="number" name="fx_debt_ratio" min="0" max="100" required>
-          </div>
-
-          <div class="field">
-            <label>4) Döviz gelir / toplam gelir (%)</label>
-            <input type="number" name="fx_revenue_ratio" min="0" max="100" required>
-          </div>
-
-          <div class="field">
-            <div class="label-row">
-              <label>5) Nakit tamponu (ay)</label>
-              <span class="info">i
-                <span class="tip">
-                  <div><strong>Tanım:</strong> Mevcut nakit ile kaç ay dayanırsın?</div>
-                  <div style="margin-top:6px;"><strong>Formül:</strong></div>
-                  <div style="margin-top:4px;">
-                    Nakit tamponu (ay) = (Kasa + Banka) / Aylık ort. nakit çıkışı
-                  </div>
-                  <div style="margin-top:6px; opacity:.9;">
-                    Örn: 9m TL nakit / 3m TL aylık çıkış = 3 ay
-                  </div>
-                </span>
-              </span>
-            </div>
-            <input type="number" name="cash_buffer_months" min="0" required>
-          </div>
-
-          <div class="field">
-            <label>6) En büyük müşteri payı (%)</label>
-            <input type="number" name="top_customer_share" min="0" max="100" required>
-          </div>
-
-          <div class="field">
-            <label>7) En büyük müşteri 2 ay ödeme yapmazsa hangi ay nakit açığı oluşur?</label>
-            <select name="top_customer_2m_gap_month" required>
-              <option value="" selected disabled>Seçiniz</option>
-              <option value="1">1. ayda</option>
-              <option value="2">2. ayda</option>
-              <option value="3">3. ayda</option>
-              <option value="4">4. ayda</option>
-              <option value="5">5. ayda</option>
-              <option value="6">6+ ayda</option>
-              <option value="99">Açık oluşmaz</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label>8) Son 12 ayda plan dışı ödeme ertelemesi yapıldı mı?</label>
-            <select name="unplanned_deferral_12m" required>
-              <option value="" selected disabled>Seçiniz</option>
-              <option value="YES">Evet</option>
-              <option value="NO">Hayır</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label>9) Son 12 ay gecikme yaşandı mı?</label>
-            <select name="delay_issue" required>
-              <option value="no">Hayır</option>
-              <option value="yes">Evet</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label>10) 12 ay içinde vadesi dolacak borç (%)</label>
-            <input type="number" name="short_debt_ratio" min="0" max="100" required>
-          </div>
-
-          <div class="field">
-            <label>11) Limit daralması / teminat baskısı?</label>
-            <select name="limit_pressure" required>
-              <option value="no">Hayır</option>
-              <option value="yes">Evet</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label>12) Kur riski yönetimi</label>
-            <select name="hedging" required>
-              <option value="none">Yok</option>
-              <option value="basic">Kısmi</option>
-              <option value="strong">Var</option>
-            </select>
-          </div>
-
+      <!-- SEKTÖR SEÇ -->
+      <div class="sector-picker">
+        <div class="sector-label">
+          <span class="sector-badge">SEKTÖR SEÇ</span>
+          <span class="sector-arrow">➜</span>
         </div>
 
-        <div class="actions">
-          <button class="btn" type="submit">{{ sector_label }} Risk Testini Başlat</button>
-          <a class="btn secondary" href="/">Vazgeç</a>
-        </div>
+        <form action="/check" method="get" class="sector-form">
+          <select name="sector" onchange="this.form.submit()" class="sector-select">
+            <option value="defense" {% if sector=='defense' %}selected{% endif %}>Savunma Sanayi</option>
+            <option value="construction" {% if sector=='construction' %}selected{% endif %}>İnşaat</option>
+            <option value="electrical" {% if sector=='electrical' %}selected{% endif %}>Elektrik Taahhüt</option>
+            <option value="energy" {% if sector=='energy' %}selected{% endif %}>Enerji</option>
+          </select>
 
-        <p class="small">
-          Not: Bu test hızlı ön taramadır. Detaylı çalışma için cashguardtr.com üzerinden iletişime geçebilirsin.
-        </p>
-      </form>
+          <noscript>
+            <button class="btn secondary" type="submit">Seç</button>
+          </noscript>
+        </form>
+      </div>
+
+      <a class="btn secondary" href="/">Ana Sayfa</a>
     </div>
-
   </div>
-</body>
-</html>
+
+  <div class="card">
+    <h2>{{ sector_label }} Risk Testi</h2>
+    <p><strong>cashguardtr.com</strong> — Bankaya gitmeden önce kırmızı/sarı/yeşil görün.</p>
+
+    <form action="/result" method="post">
+      <!-- sektörü sakla -->
+      <input type="hidden" name="sector" value="{{ sector }}">
+
+      <div class="grid">
+
+        <div class="field">
+          <label>1) Ortalama tahsilat (gün)</label>
+          <input type="number" name="collection_days" min="0" required>
+        </div>
+
+        <div class="field">
+          <label>2) Ortalama ödeme (gün)</label>
+          <input type="number" name="payable_days" min="0" required>
+        </div>
+
+        <div class="field">
+          <label>3) Döviz borcu / toplam borç (%)</label>
+          <input type="number" name="fx_debt_ratio" min="0" max="100" required>
+        </div>
+
+        <div class="field">
+          <label>4) Döviz gelir / toplam gelir (%)</label>
+          <input type="number" name="fx_revenue_ratio" min="0" max="100" required>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>5) Nakit tamponu (ay)</label>
+            <span class="info">i
+              <span class="tip">
+                <div><strong>Tanım:</strong> Mevcut nakit ile kaç ay dayanırsın?</div>
+                <div style="margin-top:6px;"><strong>Formül:</strong></div>
+                <div style="margin-top:4px;">
+                  Nakit tamponu (ay) = (Kasa + Banka) / Aylık ort. nakit çıkışı
+                </div>
+                <div style="margin-top:6px; opacity:.9;">
+                  Örn: 9m TL nakit / 3m TL aylık çıkış = 3 ay
+                </div>
+              </span>
+            </span>
+          </div>
+          <input type="number" name="cash_buffer_months" min="0" required>
+        </div>
+
+        <div class="field">
+          <label>6) En büyük müşteri payı (%)</label>
+          <input type="number" name="top_customer_share" min="0" max="100" required>
+        </div>
+
+        <div class="field">
+          <label>7) En büyük müşteri 2 ay ödeme yapmazsa hangi ay nakit açığı oluşur?</label>
+          <select name="top_customer_2m_gap_month" required>
+            <option value="" selected disabled>Seçiniz</option>
+            <option value="1">1. ayda</option>
+            <option value="2">2. ayda</option>
+            <option value="3">3. ayda</option>
+            <option value="4">4. ayda</option>
+            <option value="5">5. ayda</option>
+            <option value="6">6+ ayda</option>
+            <option value="99">Açık oluşmaz</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>8) Son 12 ayda plan dışı ödeme ertelemesi yapıldı mı?</label>
+          <select name="unplanned_deferral_12m" required>
+            <option value="" selected disabled>Seçiniz</option>
+            <option value="YES">Evet</option>
+            <option value="NO">Hayır</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>9) Son 12 ay gecikme yaşandı mı?</label>
+          <select name="delay_issue" required>
+            <option value="no">Hayır</option>
+            <option value="yes">Evet</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>10) 12 ay içinde vadesi dolacak borç (%)</label>
+          <input type="number" name="short_debt_ratio" min="0" max="100" required>
+        </div>
+
+        <div class="field">
+          <label>11) Limit daralması / teminat baskısı?</label>
+          <select name="limit_pressure" required>
+            <option value="no">Hayır</option>
+            <option value="yes">Evet</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>12) Kur riski yönetimi</label>
+          <select name="hedging" required>
+            <option value="none">Yok</option>
+            <option value="basic">Kısmi</option>
+            <option value="strong">Var</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="actions">
+        <button class="btn" type="submit">{{ sector_label }} Risk Testini Başlat</button>
+        <a class="btn secondary" href="/">Vazgeç</a>
+      </div>
+
+      <p class="small">
+        Not: Bu test hızlı ön taramadır. Detaylı çalışma için cashguardtr.com üzerinden iletişime geçebilirsin.
+      </p>
+    </form>
+  </div>
+{% endblock %}
