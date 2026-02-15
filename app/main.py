@@ -5,6 +5,10 @@ import os
 import json
 import shutil
 
+from email.message import EmailMessage
+import smtplib
+import ssl
+
 from fastapi import FastAPI, Request, Form, UploadFile, File, Depends
 from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -40,6 +44,52 @@ SECTOR_LABELS = {
     "electrical": "Elektrik Taahhüt",
     "energy": "Enerji",
 }
+
+LEAD_EMAIL = "rapor@cashguardtr.com"
+
+def send_email_smtp(
+    *,
+    to_email: str,
+    subject: str,
+    body_text: str,
+    attachment_bytes: bytes | None = None,
+    attachment_filename: str | None = None,
+):
+    """
+    SMTP ile e-posta gönderir.
+    ENV:
+      SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD
+      SMTP_FROM (örn: rapor@cashguardtr.com)
+    """
+    host = os.getenv("SMTP_HOST")
+    port = int(os.getenv("SMTP_PORT", "587"))
+    user = os.getenv("SMTP_USER")
+    password = os.getenv("SMTP_PASSWORD")
+    from_email = os.getenv("SMTP_FROM", user)
+
+    if not host or not user or not password or not from_email:
+        raise RuntimeError("SMTP env eksik: SMTP_HOST/SMTP_USER/SMTP_PASSWORD/SMTP_FROM")
+
+    msg = EmailMessage()
+    msg["From"] = from_email
+    msg["To"] = to_email
+    msg["Subject"] = subject
+    msg.set_content(body_text)
+
+    if attachment_bytes and attachment_filename:
+        msg.add_attachment(
+            attachment_bytes,
+            maintype="application",
+            subtype="pdf",
+            filename=attachment_filename,
+        )
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP(host, port, timeout=25) as server:
+        server.ehlo()
+        server.starttls(context=context)
+        server.login(user, password)
+        server.send_message(msg)
 
 def _common_ctx(request: Request, title: str):
     return {"request": request, "title": title, "year": datetime.now().year}
@@ -125,6 +175,11 @@ def result(
             "short_debt_ratio": short_debt_ratio,
             "limit_pressure": limit_pressure,
             "hedging": hedging,
+
+            # email feedback placeholders (result.html gösterebilir)
+            "email_sent": False,
+            "email_to": "",
+            "email_error": None,
         }
     )
     return templates.TemplateResponse("result.html", ctx)
@@ -198,6 +253,142 @@ def result_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+@app.post("/result/email", response_class=HTMLResponse)
+def result_email(
+    request: Request,
+    sector: str = Form("defense"),
+
+    collection_days: int = Form(...),
+    payable_days: int = Form(...),
+    fx_debt_ratio: int = Form(...),
+    fx_revenue_ratio: int = Form(...),
+    cash_buffer_months: int = Form(...),
+    top_customer_share: int = Form(...),
+
+    top_customer_2m_gap_month: int = Form(...),
+    unplanned_deferral_12m: str = Form(...),
+
+    delay_issue: str = Form(...),
+    short_debt_ratio: int = Form(...),
+    limit_pressure: str = Form(...),
+    hedging: str = Form(...),
+
+    company: str = Form(""),
+    email: str = Form(...),
+):
+    sector = _sanitize_sector(sector)
+    sector_label = SECTOR_LABELS[sector]
+
+    score, level, messages = calculate_risk(
+        sector=sector,
+        collection_days=collection_days,
+        payable_days=payable_days,
+        fx_debt_ratio=fx_debt_ratio,
+        fx_revenue_ratio=fx_revenue_ratio,
+        cash_buffer_months=cash_buffer_months,
+        top_customer_share=top_customer_share,
+        top_customer_2m_gap_month=top_customer_2m_gap_month,
+        unplanned_deferral_12m=unplanned_deferral_12m,
+        delay_issue=delay_issue,
+        short_debt_ratio=short_debt_ratio,
+        limit_pressure=limit_pressure,
+        hedging=hedging,
+    )
+
+    payload = {
+        "company": company,
+        "sector": sector_label,
+        "score": score,
+        "level": level,
+        "messages": messages,
+        "collection_days": collection_days,
+        "payable_days": payable_days,
+        "fx_debt_ratio": fx_debt_ratio,
+        "fx_revenue_ratio": fx_revenue_ratio,
+        "cash_buffer_months": cash_buffer_months,
+        "top_customer_share": top_customer_share,
+        "top_customer_2m_gap_month": top_customer_2m_gap_month,
+        "unplanned_deferral_12m": unplanned_deferral_12m,
+        "delay_issue": delay_issue,
+        "short_debt_ratio": short_debt_ratio,
+        "limit_pressure": limit_pressure,
+        "hedging": hedging,
+    }
+
+    pdf_bytes = build_pdf_report(payload)
+    filename = f"cashguardtr-{sector}-skor-{score}.pdf"
+
+    user_subject = f"CashGuard TR Sonuç Raporu — {sector_label} ({score}/100)"
+    user_body = (
+        "Merhaba,\n\n"
+        "CashGuard TR hızlı risk test raporunuz ektedir.\n\n"
+        f"Sektör: {sector_label}\n"
+        f"Skor: {score}/100\n"
+        f"Seviye: {level}\n\n"
+        "Öne çıkan başlıklar:\n"
+        + "\n".join([f"- {m}" for m in messages]) +
+        "\n\nCashGuard TR | cashguardtr.com\n"
+    )
+
+    lead_subject = f"[LEAD] Rapor gönderildi — {sector_label} ({score}/100)"
+    lead_body = (
+        "Yeni lead:\n"
+        f"- Kullanıcı email: {email}\n"
+        f"- Firma: {company or '-'}\n"
+        f"- Sektör: {sector_label} ({sector})\n"
+        f"- Skor/Seviye: {score}/100 | {level}\n"
+        f"- Zaman (UTC): {datetime.utcnow().isoformat()}Z\n"
+    )
+
+    email_sent = False
+    email_error = None
+
+    try:
+        send_email_smtp(
+            to_email=email.strip(),
+            subject=user_subject,
+            body_text=user_body,
+            attachment_bytes=pdf_bytes,
+            attachment_filename=filename,
+        )
+        send_email_smtp(
+            to_email=LEAD_EMAIL,
+            subject=lead_subject,
+            body_text=lead_body,
+        )
+        email_sent = True
+    except Exception as e:
+        email_error = str(e)
+
+    ctx = _common_ctx(request, f"Sonuç | {sector_label} | CashGuard TR")
+    ctx.update(
+        {
+            "sector": sector,
+            "sector_label": sector_label,
+            "score": score,
+            "level": level,
+            "messages": messages,
+
+            "collection_days": collection_days,
+            "payable_days": payable_days,
+            "fx_debt_ratio": fx_debt_ratio,
+            "fx_revenue_ratio": fx_revenue_ratio,
+            "cash_buffer_months": cash_buffer_months,
+            "top_customer_share": top_customer_share,
+            "top_customer_2m_gap_month": top_customer_2m_gap_month,
+            "unplanned_deferral_12m": unplanned_deferral_12m,
+            "delay_issue": delay_issue,
+            "short_debt_ratio": short_debt_ratio,
+            "limit_pressure": limit_pressure,
+            "hedging": hedging,
+
+            "email_sent": email_sent,
+            "email_to": email,
+            "email_error": email_error,
+        }
+    )
+    return templates.TemplateResponse("result.html", ctx)
 
 @app.get("/about", response_class=HTMLResponse)
 def about(request: Request):
