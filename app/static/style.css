@@ -1,7 +1,4 @@
-/* =====================================================
-   CASHGUARD FINAL THEME 2026
-   Dark Turquoise sides + White center + Black header
-   ===================================================== */
+/* CASHGUARDTR THEME v1001 (LIGHT + dark turquoise sides + black header) */
 
 :root{
   --bg:#f6f7fb;
@@ -12,11 +9,14 @@
   --shadow:0 14px 40px rgba(15,23,42,.10);
 
   --accent:#7c3aed;
+  --accent2:#16a34a;
+  --accent3:#0891b2;
+
   --radius:18px;
 
-  /* NEW DARK TURQUOISE SIDES */
-  --side1:#083344;
-  --side2:#0e7490;
+  /* Darker turquoise for side glow */
+  --turq: rgba(8,145,178,.28);
+  --turq2: rgba(6,182,212,.22);
 }
 
 *{box-sizing:border-box}
@@ -27,151 +27,378 @@ body{
   min-height:100vh;
   color:var(--text);
 
-  /* Dark turquoise sides */
+  /* Dark turquoise sides + light base */
   background:
-    radial-gradient(1200px 800px at 0% 50%, rgba(14,116,144,.35), transparent 60%),
-    radial-gradient(1200px 800px at 100% 50%, rgba(8,51,68,.45), transparent 60%),
-    linear-gradient(180deg,var(--side1),var(--side2));
+    radial-gradient(1100px 700px at 0% 50%, var(--turq), transparent 60%),
+    radial-gradient(1100px 700px at 100% 50%, var(--turq2), transparent 60%),
+    var(--bg);
 }
 
-/* WHITE CENTER PANEL */
+/* Center “white lane” */
 .container{
   max-width:900px;
   margin:18px auto;
   padding:28px 16px;
-  background:rgba(255,255,255,.94);
-  border-radius:22px;
-  border:1px solid rgba(15,23,42,.08);
-  box-shadow:0 18px 50px rgba(15,23,42,.10);
+
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(15,23,42,.06);
+  border-radius: 22px;
+  box-shadow: 0 18px 50px rgba(15,23,42,.08);
 }
 
-/* HEADER */
+/* Generic nav (used in check/result) */
+.nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap}
+.brand{font-weight:800;letter-spacing:.3px;color:var(--text)}
+.brand a{color:inherit;text-decoration:none}
+
+/* Card */
+.card{
+  background: var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:20px;
+  border:1px solid var(--border);
+}
+
+h1,h2{margin:0 0 10px 0; color: var(--text);}
+p{margin:0 0 10px 0;color:var(--muted)}
+
+/* Forms */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:700px){.grid{grid-template-columns:1fr}}
+
+.field label{display:block;font-weight:700;margin-bottom:6px;color:var(--text)}
+
+input,select,textarea{
+  width:100%;
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background: rgba(15,23,42,.03);
+  color: var(--text);
+}
+input::placeholder{ color: rgba(15,23,42,.45); }
+
+.actions{margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+.btn{
+  display:inline-block;
+  padding:10px 14px;
+  border-radius:14px;
+  background: linear-gradient(90deg, var(--accent), #4f46e5);
+  color:#fff;
+  text-decoration:none;
+  border:none;
+  cursor:pointer;
+  font-weight:900;
+  box-shadow: 0 10px 24px rgba(124,58,237,.18);
+}
+.btn.secondary{
+  background: #ffffff;
+  color: var(--text);
+  border:1px solid var(--border);
+  box-shadow: none;
+}
+.btn.secondary:hover{ background: rgba(15,23,42,.03); }
+
+.badge{
+  display:inline-block;
+  padding:7px 11px;
+  border-radius:999px;
+  font-weight:900;
+  color: var(--text);
+}
+.GREEN{ background: rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.28); }
+.YELLOW{ background: rgba(250,204,21,.14); border:1px solid rgba(250,204,21,.30); }
+.RED{ background: rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.28); }
+
+.list{margin:10px 0 0 18px;color:var(--text)}
+.small{font-size:12px;color:rgba(15,23,42,.65)}
+hr{border:none;border-top:1px solid var(--border);margin:14px 0}
+
+/* =========================
+   Header (base.html)
+   ========================= */
 .header{
-  position:sticky;
-  top:0;
-  z-index:1000;
-  background:rgba(0,0,0,.92);
-  border-bottom:1px solid rgba(255,255,255,.10);
-  backdrop-filter:blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255,255,255,.10);
 }
 
 .header-inner{
-  max-width:900px;
-  margin:0 auto;
-  padding:12px 16px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-}
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px 16px;
 
-.brand a{
-  color:#fff !important;
-  font-weight:900;
-  text-decoration:none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* ✅ sağa yaslama fix */
+  gap: 12px;
 }
 
 .navlinks{
   display:flex;
-  gap:14px;
-  margin-left:auto;
+  gap:12px;
+  flex-wrap:wrap;
+  justify-content:flex-end; /* ✅ sağa yaslama fix */
+  margin-left:auto;         /* ✅ sağa yaslama fix */
+  text-align:right;
 }
 
 .navlinks a{
-  color:rgba(255,255,255,.75);
-  text-decoration:none;
-  font-weight:700;
+  color: rgba(255,255,255,.78);
+  font-weight: 700;
+  text-decoration: none;
 }
-.navlinks a:hover{color:#fff}
+.navlinks a:hover{ color:#fff; }
 
-/* CARDS */
-.card{
-  background:var(--card);
-  border-radius:var(--radius);
-  padding:20px;
-  border:1px solid var(--border);
-  box-shadow:var(--shadow);
+/* Mobile header wrap looks ok */
+@media (max-width:700px){
+  .header-inner{flex-wrap:wrap}
+  .navlinks{justify-content:flex-start;margin-left:0;text-align:left}
+  .container{margin:12px auto;border-radius:18px;padding:18px 12px}
 }
 
-/* TYPOGRAPHY */
-h1,h2{margin:0 0 10px 0}
-p{margin:0 0 10px 0;color:var(--muted)}
-
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-@media(max-width:700px){.grid{grid-template-columns:1fr}}
-
-/* FORM */
-.field label{display:block;font-weight:700;margin-bottom:6px}
-input,select{
-  width:100%;
-  padding:12px;
-  border-radius:14px;
-  border:1px solid var(--border);
-  background:rgba(15,23,42,.03);
+/* =========================
+   CHECK PAGE: Sector picker fix
+   (select was taking 100% because of global select width)
+   ========================= */
+.nav-right{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+  justify-content:flex-end;
 }
 
-/* BUTTONS */
-.btn{
-  padding:12px 16px;
-  border-radius:14px;
-  background:linear-gradient(90deg,var(--accent),#4f46e5);
-  color:#fff;
-  border:none;
-  cursor:pointer;
+.sector-picker{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:nowrap;
+}
+
+.sector-label{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  white-space:nowrap;
+}
+
+.sector-badge{
+  display:inline-block;
+  padding:6px 10px;
+  border-radius:999px;
   font-weight:900;
-  text-decoration:none;
-}
-.btn.secondary{
-  background:#fff;
-  color:var(--text);
+  letter-spacing:.3px;
+  background: rgba(15,23,42,.03);
   border:1px solid var(--border);
+  color: var(--text);
 }
 
-.actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
-
-.badge{padding:7px 11px;border-radius:999px;font-weight:900}
-.GREEN{background:#dcfce7;border:1px solid #22c55e}
-.YELLOW{background:#fef9c3;border:1px solid #facc15}
-.RED{background:#fee2e2;border:1px solid #ef4444}
-
-.list{margin-left:18px}
-.small{font-size:12px;color:rgba(15,23,42,.65)}
-.footer{text-align:center;margin-top:20px;font-size:12px}
-
-/* MOBILE */
-@media(max-width:700px){
-  .container{margin:12px;border-radius:18px;padding:18px}
-  .navlinks{flex-wrap:wrap;justify-content:flex-end}
+.sector-arrow{
+  font-size:18px;
+  font-weight:900;
+  color: rgba(15,23,42,.55);
+  display:inline-block;
+  animation: sectorNudge 1.1s ease-in-out infinite;
+}
+@keyframes sectorNudge{
+  0%{ transform: translateX(0); }
+  50%{ transform: translateX(4px); }
+  100%{ transform: translateX(0); }
 }
 
-/* =====================================================
-   WHATSAPP FLOAT BUTTON
-   ===================================================== */
+.sector-form{
+  margin:0;
+  display:flex;
+  align-items:center;
+}
 
-.wa-widget{position:fixed;right:18px;bottom:18px;z-index:9999}
+/* ✅ THIS is the main fix */
+.sector-select{
+  width:auto !important;        /* override global select width:100% */
+  min-width: 220px;
+  max-width: 280px;
+  font-weight:600;
+  padding:10px 12px;
+}
 
+/* Mobile tweaks */
+@media (max-width:700px){
+  .sector-picker{flex-wrap:wrap}
+  .sector-select{min-width:170px;max-width:220px}
+  .sector-arrow{transform: rotate(90deg); animation: sectorNudgeDown 1.1s ease-in-out infinite;}
+  @keyframes sectorNudgeDown{
+    0%{ transform: rotate(90deg) translateY(0); }
+    50%{ transform: rotate(90deg) translateY(4px); }
+    100%{ transform: rotate(90deg) translateY(0); }
+  }
+}
+
+/* =========================
+   Brand logo (check.html)
+   ========================= */
+.brand-link{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  text-decoration:none;
+  color:inherit;
+}
+.brand-logo{
+  width:28px;
+  height:28px;
+  object-fit:contain;
+  image-rendering: -webkit-optimize-contrast;
+}
+.brand-text{
+  display:inline-block;
+  margin-left:6px;
+}
+
+/* =========================
+   Tooltip (i): hover to show
+   + mobile tap support via .open class
+   ========================= */
+.label-row{display:flex; align-items:center; gap:8px;}
+.info{
+  width:18px; height:18px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:900;
+  background: rgba(15,23,42,.06);
+  border:1px solid var(--border);
+  color: var(--text);
+  cursor: default;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+/* hidden by default */
+.info .tip{
+  display:none;
+  position:absolute;
+  left: 24px;
+  top: -6px;
+  width: 320px;
+  max-width: min(320px, calc(100vw - 60px));
+  background: rgba(255,255,255,.98);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+  font-weight: 600;
+  z-index: 50;
+}
+
+/* desktop hover */
+.info:hover .tip{display:block;}
+
+/* mobile tap (class toggled by JS in check.html) */
+.info.open .tip{display:block;}
+
+/* =========================
+   WhatsApp Live Support Widget (Global)
+   ========================= */
+.wa-widget{ position: fixed; right: 18px; bottom: 18px; z-index: 9999; }
+
+/* ✅ WhatsApp icon-only FAB */
 .wa-fab{
-  width:64px;height:64px;border-radius:50%;
-  border:none;background:#25D366;
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  border:none;
+  background:#25D366;
   box-shadow:0 12px 30px rgba(0,0,0,.18);
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:.2s;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:.2s;
 }
-.wa-fab:hover{transform:scale(1.08)}
+.wa-fab:hover{
+  transform: scale(1.07);
+  box-shadow:0 16px 36px rgba(0,0,0,.22);
+}
+.wa-fab svg{ width:30px; height:30px; display:block; fill:#fff; }
 
 .wa-panel{
-  width:320px;margin-top:10px;
-  background:#fff;border-radius:16px;
-  box-shadow:var(--shadow);
-  display:none;
+  width: 320px;
+  max-width: calc(100vw - 36px);
+  margin-top: 10px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: none;
 }
-.wa-panel.open{display:block}
+.wa-panel.open{ display: block; }
 
-.wa-head{padding:12px;border-bottom:1px solid var(--border)}
-.wa-body{padding:12px}
+.wa-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 12px;
+  background: rgba(15,23,42,.02);
+  border-bottom: 1px solid var(--border);
+}
+
+.wa-head-left{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.wa-avatar{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  background:#25D366;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 4px 12px rgba(0,0,0,.12);
+}
+.wa-avatar svg{ width:18px; height:18px; fill:#fff; display:block; }
+
+.wa-title{ font-weight: 900; color: var(--text); }
+.wa-sub{ font-size: 12px; opacity: .75; margin-top: 2px; color: var(--muted); }
+
+.wa-close{
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 6px 8px;
+  border-radius: 10px;
+}
+.wa-close:hover{ background: rgba(15,23,42,.05); }
+
+.wa-body{ padding: 12px; }
+.wa-text{ font-size: 14px; opacity: .9; margin-bottom: 10px; color: var(--text); }
 
 .wa-cta{
-  display:block;text-align:center;
-  padding:12px;border-radius:12px;
-  background:linear-gradient(90deg,var(--accent),#4f46e5);
-  color:#fff;text-decoration:none;font-weight:900;
+  display: block;
+  text-align: center;
+  padding: 12px 12px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, var(--accent), #4f46e5);
+  color: #fff;
+  font-weight: 900;
+  text-decoration: none;
+  border: 1px solid rgba(15,23,42,.08);
+  box-shadow: 0 10px 24px rgba(124,58,237,.14);
 }
+
+.wa-note{ font-size: 12px; opacity:.75; margin-top: 10px; color: var(--muted); }
