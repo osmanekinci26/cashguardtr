@@ -368,19 +368,28 @@ input, select {
 
 /* =========================================================
    WhatsApp Live Support Widget (global)
-   (HTML/JS snippet will be added to base.html)
    ========================================================= */
 .wa-widget{ position: fixed; right: 18px; bottom: 18px; z-index: 9999; }
+
+/* ✅ WhatsApp FAB: icon-only, green, round */
 .wa-fab{
-  padding: 12px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: #ffffff;
-  color: var(--text);
-  box-shadow: var(--shadow);
-  cursor: pointer;
-  font-weight: 900;
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  border:none;
+  background:#25D366;
+  box-shadow:0 12px 30px rgba(0,0,0,.18);
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:.2s;
 }
+.wa-fab:hover{
+  transform: scale(1.08);
+  box-shadow:0 16px 36px rgba(0,0,0,.22);
+}
+
 .wa-panel{
   width: 320px;
   max-width: calc(100vw - 36px);
