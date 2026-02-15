@@ -225,8 +225,6 @@ def _sum_prefix(rows: List[TBRow], prefixes: List[str]) -> float:
             continue
 
         if len(pd) == 1:
-            # "6" gibi -> 600-699 varsayımı yapmayalım; çok muğlak.
-            # Yine de isteyen olursa: 6xx yerine 600-699
             lo = int(pd) * 100
             hi = lo + 99
             total += _sum_3range(b3, lo, hi)
@@ -334,6 +332,11 @@ def _trial_balance_to_income_statement(rows: List[TBRow]) -> Dict[str, float]:
 
     gross_profit = revenue_net - cogs
     ebit = gross_profit - opex + other_op_income - other_op_exp
+
+    # ✅ Brüt/Net satışları da yaz (brüt marjı doğru kurmak için)
+    inc["gross_sales"] = gross_sales
+    inc["sales_discounts"] = -abs(discounts)  # standart: indirim negatif
+    inc["net_sales"] = revenue_net
 
     inc["revenue"] = revenue_net
     inc["cogs"] = cogs
@@ -756,7 +759,21 @@ def analyze_financials(fin: dict, sector: str) -> dict:
 
     fin_cost = fin_exp if fin_exp else interest_exp
     interest_cover = (ebit / fin_cost) if fin_cost else None
-    gross_margin = ((revenue - cogs) / revenue) if revenue else None
+
+    # ✅ Brüt marj: (Brüt Satışlar + Satış İndirimleri) bazında, işaret normalize
+    gross_sales = g(inc, "gross_sales")
+    sales_discounts = g(inc, "sales_discounts")
+    net_sales = g(inc, "net_sales") or revenue
+
+    if gross_sales and sales_discounts:
+        sd = -abs(sales_discounts) if sales_discounts > 0 else sales_discounts  # indirim negatif
+        net_sales_calc = gross_sales + sd  # Brüt + (negatif indirim)
+    else:
+        net_sales_calc = abs(net_sales) if net_sales else 0.0
+
+    cogs_norm = abs(cogs)
+    gross_profit_calc = net_sales_calc - cogs_norm
+    gross_margin = (gross_profit_calc / net_sales_calc) if net_sales_calc else None
 
     bullets: List[str] = []
 
@@ -814,7 +831,14 @@ def analyze_financials(fin: dict, sector: str) -> dict:
             "net_debt": net_debt,
             "debt_to_equity": debt_to_equity,
             "interest_cover": interest_cover,
+
+            # ✅ brüt marj debug kırılımları
             "gross_margin": gross_margin,
+            "gross_sales": gross_sales,
+            "sales_discounts": sales_discounts,
+            "net_sales_calc": net_sales_calc,
+            "gross_profit_calc": gross_profit_calc,
+
             "revenue": revenue,
             "cogs": cogs,
             "equity": equity,
