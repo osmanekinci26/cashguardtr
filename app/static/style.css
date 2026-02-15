@@ -496,3 +496,20 @@ body{
     border-radius: 18px;
   }
 }
+/* WhatsApp panel avatar */
+.wa-head-left{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.wa-avatar{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  background:#25D366;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 4px 12px rgba(0,0,0,.15);
+}
