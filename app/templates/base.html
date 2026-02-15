@@ -5,69 +5,63 @@
   <title>{{ title or "CashGuard | cashguardtr.com" }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
-  <link rel="stylesheet" href="/static/style.css?v=3">
+  <link rel="stylesheet" href="/static/style.css?v=2001">
 </head>
 
 <body>
   <!-- Top navigation -->
-  <div class="header">
+  <header class="header">
     <div class="header-inner">
       <div class="brand">
-        <a href="/" style="color:inherit;text-decoration:none;">CashGuard</a>
+        <a href="/" class="brand-link" aria-label="CashGuard ana sayfa">
+          <span class="brand-text">CashGuard</span>
+        </a>
       </div>
 
-      <div class="navlinks">
+      <nav class="navlinks" aria-label="Üst menü">
         <a href="/why-cash">Nakit Neden Korunmalı?</a>
         <a href="/about">Hakkında</a>
         <a href="/team">Biz Kimiz</a>
         <a href="/services">Hizmetler</a>
         <a href="/contact">İletişim</a>
-      </div>
+      </nav>
     </div>
-  </div>
+  </header>
 
   <!-- Page content -->
-  <div class="container">
+  <main class="container">
     {% block content %}{% endblock %}
 
     <div class="footer">
       © {{ year }} CashGuard TR — cashguardtr.com
     </div>
-  </div>
+  </main>
 
-    <!-- ===== WhatsApp Live Support (Global) ===== -->
+  <!-- ===== WhatsApp Live Support (Global) ===== -->
   <div class="wa-widget" id="waWidget" aria-live="polite">
     <button class="wa-fab" id="waFab" type="button" aria-label="WhatsApp canlı destek">
-      <!-- WhatsApp SVG icon -->
-      <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-        <path d="M19.11 17.53c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.95 1.16-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.8-1.49-1.78-1.66-2.08-.17-.3-.02-.46.13-.61.14-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.5l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.05 1.03-1.05 2.5s1.07 2.9 1.22 3.1c.15.2 2.1 3.2 5.08 4.49.71.31 1.27.5 1.7.64.71.23 1.36.2 1.87.12.57-.09 1.75-.71 2-1.4.25-.69.25-1.28.17-1.4-.08-.12-.27-.2-.57-.35zM16 4.8c-6.2 0-11.2 5-11.2 11.2 0 1.99.52 3.86 1.44 5.48L5 27.2l5.9-1.55c1.55.85 3.33 1.35 5.22 1.35 6.2 0 11.2-5 11.2-11.2S22.2 4.8 16 4.8zm0 20.2c-1.74 0-3.36-.47-4.76-1.28l-.34-.2-3.5.92.93-3.41-.22-.35A9 9 0 0 1 7 16c0-4.96 4.04-9 9-9s9 4.04 9 9-4.04 9-9 9z"/>
+      <!-- WhatsApp SVG (dosya yüklemene gerek yok) -->
+      <svg class="wa-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <path fill="currentColor" d="M19.11 17.23c-.27-.14-1.58-.78-1.82-.87-.24-.09-.42-.14-.6.14-.18.27-.69.87-.85 1.05-.16.18-.31.2-.58.07-.27-.14-1.13-.42-2.16-1.33-.8-.72-1.34-1.6-1.5-1.87-.16-.27-.02-.42.12-.55.13-.13.27-.31.4-.47.13-.16.18-.27.27-.45.09-.18.04-.34-.02-.47-.07-.14-.6-1.45-.82-1.99-.22-.54-.44-.47-.6-.47h-.51c-.18 0-.47.07-.72.34-.24.27-.95.93-.95 2.27s.98 2.63 1.11 2.82c.14.18 1.94 2.96 4.7 4.15.66.29 1.18.46 1.58.59.66.21 1.26.18 1.74.11.53-.08 1.58-.65 1.8-1.27.22-.62.22-1.16.16-1.27-.07-.11-.24-.18-.51-.32z"/>
+        <path fill="currentColor" d="M26.66 5.34A12.8 12.8 0 0 0 16.03 1C8.96 1 3.2 6.76 3.2 13.83c0 2.26.59 4.47 1.72 6.42L3 31l10.93-1.87a12.76 12.76 0 0 0 6.1 1.55h.01c7.07 0 12.83-5.76 12.83-12.83 0-3.42-1.33-6.63-3.74-9.01zM20.03 28.6h-.01a10.7 10.7 0 0 1-5.46-1.5l-.39-.23-6.49 1.11 1.1-6.32-.26-.41a10.62 10.62 0 0 1-1.64-5.71C6.88 7.89 11.09 3.68 16.03 3.68c2.85 0 5.53 1.11 7.55 3.13a10.61 10.61 0 0 1 3.12 7.55c0 4.94-4.21 9.24-9.67 9.24z"/>
       </svg>
     </button>
 
     <div class="wa-panel" id="waPanel" role="dialog" aria-label="WhatsApp canlı destek paneli">
       <div class="wa-head">
-        <div class="wa-head-left">
-          <div class="wa-avatar" aria-hidden="true">
-            <svg viewBox="0 0 32 32">
-              <path d="M19.11 17.53c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.95 1.16-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.8-1.49-1.78-1.66-2.08-.17-.3-.02-.46.13-.61.14-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.08-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.5l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.05 1.03-1.05 2.5s1.07 2.9 1.22 3.1c.15.2 2.1 3.2 5.08 4.49.71.31 1.27.5 1.7.64.71.23 1.36.2 1.87.12.57-.09 1.75-.71 2-1.4.25-.69.25-1.28.17-1.4-.08-.12-.27-.2-.57-.35zM16 4.8c-6.2 0-11.2 5-11.2 11.2 0 1.99.52 3.86 1.44 5.48L5 27.2l5.9-1.55c1.55.85 3.33 1.35 5.22 1.35 6.2 0 11.2-5 11.2-11.2S22.2 4.8 16 4.8zm0 20.2c-1.74 0-3.36-.47-4.76-1.28l-.34-.2-3.5.92.93-3.41-.22-.35A9 9 0 0 1 7 16c0-4.96 4.04-9 9-9s9 4.04 9 9-4.04 9-9 9z"/>
-            </svg>
-          </div>
-          <div>
-            <div class="wa-title">Canlı Destek</div>
-            <div class="wa-sub">Genelde 5 dk içinde dönüş.</div>
-          </div>
+        <div>
+          <div class="wa-title">Canlı Destek</div>
+          <div class="wa-sub">Genelde 5 dk içinde dönüş.</div>
         </div>
         <button class="wa-close" id="waClose" type="button" aria-label="Kapat">✕</button>
       </div>
 
       <div class="wa-body">
         <div class="wa-text">Merhaba 👋 Nasıl yardımcı olalım?</div>
-
         <a class="wa-cta" target="_blank" rel="noopener"
            href="https://wa.me/905316323779?text=Merhaba%20CashGuard%20ile%20ilgili%20destek%20almak%20istiyorum.">
           WhatsApp’ta yaz
         </a>
-
         <div class="wa-note">Not: Kişisel veri paylaşmayın.</div>
       </div>
     </div>
@@ -84,14 +78,19 @@
         panel.classList.toggle('open', open);
       }
 
-      if (fab) fab.addEventListener('click', () => toggle(!panel.classList.contains('open')));
+      if (fab) fab.addEventListener('click', () => {
+        toggle(!panel.classList.contains('open'));
+      });
+
       if (close) close.addEventListener('click', () => toggle(false));
 
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggle(false); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') toggle(false);
+      });
 
       document.addEventListener('click', (e) => {
         const widget = document.getElementById('waWidget');
-        if (!widget || !panel) return;
+        if (!widget || !panel || !fab) return;
         if (!widget.contains(e.target) && panel.classList.contains('open')) toggle(false);
       });
     })();
