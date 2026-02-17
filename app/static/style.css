@@ -354,14 +354,37 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 }
 
 /* slide image */
+/* slide container */
+.hs-track{
+  display:flex;
+  gap:16px;
+  transition:transform .55s cubic-bezier(.22,.61,.36,1);
+  will-change:transform;
+}
+
+/* each slide wrapper */
 .hs-track img{
   flex:0 0 100%;
   width:100%;
-  height:360px;              /* 🔥 slider büyüdü */
-  object-fit:contain;        /* 🔥 kırpma yok — TAM SIĞDIR */
-  background:#ffffff;
+  height:360px;
+
+  /* 🔥 ana çözüm burada */
+  object-fit:cover;              /* alanı doldur */
+  object-position:center;        /* ortala */
+
   border-radius:18px;
+  background:#fff;
+
+  /* 🔥 kenar boşluklarını yok eder */
+  box-shadow:
+    0 0 0 9999px #ffffff inset;
 }
+
+/* mobile */
+@media (max-width:700px){
+  .hs-track img{ height:240px; }
+}
+
 
 /* mobile */
 @media (max-width:700px){
