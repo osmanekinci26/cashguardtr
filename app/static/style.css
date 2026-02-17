@@ -326,7 +326,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .wa-note{ font-size: 12px; opacity:.75; margin-top: 10px; color: var(--muted); }
 
 /* =========================
-   HERO SLIDER (FINAL)
+   HERO SLIDER (NO DISTORT + FULL WIDTH FEEL + NO PEEK)
    ========================= */
 
 .hero-slider{
@@ -339,31 +339,62 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   padding: 12px 44px; /* oklar için boşluk */
 }
 
-/* viewport kesin hidden */
+/* Scroll-snap viewport */
 .hs-viewport{
-  overflow: hidden;
   width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* firefox */
 }
+.hs-viewport::-webkit-scrollbar{ display:none; } /* chrome */
 
-/* ✅ gap kalsın (istersen 0 yapabilirsin) ama JS artık gap’i hesaplıyor */
+/* Track */
 .hs-track{
   display: flex;
-  gap: 10px;
-  transition: transform .45s ease;
-  will-change: transform;
+  gap: 0;              /* ✅ “peek” sorunu bitiyor */
+  width: 100%;
 }
 
-/* ✅ her görsel viewport kadar alan kaplasın */
-.hs-track img{
+/* Her slide %100 genişlik */
+.hs-slide{
   flex: 0 0 100%;
   width: 100%;
-  height: 300px;          /* slider biraz büyüdü */
-  object-fit: contain;    /* BOZULMAZ + SIĞAR */
-  object-position: center;
-  background: #fff;
-  display: block;
+  scroll-snap-align: start;
+  position: relative;
+  height: 340px;       /* slider biraz büyük */
   border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
   border: 1px solid rgba(15,23,42,.06);
+}
+
+/* Arka plan: yayılma hissi (blur) */
+.hs-slide::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background-image: var(--bg);
+  background-size: cover;       /* ✅ sağa-sola yayılır */
+  background-position: center;
+  filter: blur(18px);
+  transform: scale(1.12);
+  opacity: .55;
+}
+
+/* Ön plan: bozulmadan sığdır (contain) */
+.hs-slide img{
+  position:absolute;
+  inset:0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;           /* ✅ bozulmaz */
+  object-position: center;       /* ✅ ortalı */
+  display:block;
+  padding: 10px 14px;            /* ✅ kenar nefesi */
+  box-sizing: border-box;
 }
 
 /* oklar */
@@ -409,34 +440,10 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 @media (max-width:700px){
   .hero-slider{ padding: 10px 40px; }
-  .hs-track img{ height: 220px; }
-}
-/* ===== FIX PATCH (v2002) ===== */
-
-/* Mobil layout kuralların kaybolmuş — geri ekleyelim */
-@media (max-width:700px){
-  .container{ padding:18px 12px; margin:12px auto; border-radius:18px; }
-  h1{ font-size:26px; }
-  h2{ font-size:18px; }
-  p{ font-size:14px; }
-
-  .grid{ grid-template-columns:1fr; }
-
-  .actions{ flex-direction:column; align-items:stretch; }
-  .btn{ width:100%; text-align:center; padding:12px 14px; }
-
-  /* check sayfasında select taşmasın */
-  .sector-select{ min-width:170px; max-width:220px; }
+  .hs-slide{ height: 240px; }
+  .hs-slide img{ padding: 8px 10px; }
 }
 
-/* Slider: taşmayı kesin bitir */
-.hs-track{
-  align-items: center;
-}
-
-.hs-track img{
-  min-width: 100%;     /* ✅ bazı durumlarda taşmayı bitirir */
-}
 /* ===== FIX PATCH (v2002) ===== */
 
 /* Mobil layout kuralların kaybolmuş — geri ekleyelim */

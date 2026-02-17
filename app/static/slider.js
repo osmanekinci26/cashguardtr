@@ -1,57 +1,50 @@
 (() => {
-  const slider =
-    document.querySelector("[data-slider]") ||
-    document.querySelector(".hero-slider") ||
-    document.getElementById("heroSlider");
-
+  const slider = document.querySelector(".hero-slider");
   if (!slider) return;
 
-  const track =
-    slider.querySelector(".hs-track") ||
-    slider.querySelector("[data-slides]") ||
-    slider.querySelector(".slides") ||
-    slider.querySelector("#hsTrack");
+  const viewport = slider.querySelector(".hs-viewport");
+  const track = slider.querySelector(".hs-track");
+  if (!viewport || !track) return;
 
-  if (!track) return;
+  // 1) img'leri slide wrapper içine al (blur bg için)
+  const imgs = Array.from(track.querySelectorAll("img"));
+  if (!imgs.length) return;
 
-  // img'ler veya .slide'lar
-  const slides = Array.from(track.querySelectorAll("img, .slide"));
-  if (!slides.length) return;
+  // Eğer daha önce sarıldıysa tekrar sarmayalım
+  const alreadyWrapped = track.querySelector(".hs-slide");
+  if (!alreadyWrapped) {
+    imgs.forEach((img) => {
+      const wrap = document.createElement("div");
+      wrap.className = "hs-slide";
+      wrap.style.setProperty("--bg", `url("${img.getAttribute("src")}")`);
 
-  const prevBtn =
-    slider.querySelector("[data-prev]") ||
-    slider.querySelector(".hs-btn.prev") ||
-    slider.querySelector(".slider-btn.prev") ||
-    slider.querySelector("#hsPrev");
+      // img'yi wrap içine taşı
+      img.parentNode.insertBefore(wrap, img);
+      wrap.appendChild(img);
+    });
+  } else {
+    // wrapped ise bg değişkenini set et
+    track.querySelectorAll(".hs-slide").forEach((wrap) => {
+      const img = wrap.querySelector("img");
+      if (img) wrap.style.setProperty("--bg", `url("${img.getAttribute("src")}")`);
+    });
+  }
 
-  const nextBtn =
-    slider.querySelector("[data-next]") ||
-    slider.querySelector(".hs-btn.next") ||
-    slider.querySelector(".slider-btn.next") ||
-    slider.querySelector("#hsNext");
-
-  const dotsWrap =
-    slider.querySelector("[data-dots]") ||
-    slider.querySelector(".hs-dots") ||
-    slider.querySelector(".dots") ||
-    slider.querySelector("#hsDots");
-
-  const viewport =
-    slider.querySelector(".hs-viewport") ||
-    slider.querySelector("[data-viewport]") ||
-    slider; // fallback
+  const slides = Array.from(track.querySelectorAll(".hs-slide"));
+  const prevBtn = slider.querySelector("#hsPrev") || slider.querySelector(".hs-btn.prev");
+  const nextBtn = slider.querySelector("#hsNext") || slider.querySelector(".hs-btn.next");
+  const dotsWrap = slider.querySelector("#hsDots") || slider.querySelector(".hs-dots");
 
   let index = 0;
 
-  // dots
+  // 2) dots
   let dots = [];
   if (dotsWrap) {
     dotsWrap.innerHTML = "";
     dots = slides.map((_, i) => {
       const b = document.createElement("button");
       b.type = "button";
-      // hs-dots kullanıyorsan class ver
-      if (dotsWrap.classList.contains("hs-dots")) b.className = "hs-dot";
+      b.className = "hs-dot";
       b.setAttribute("aria-label", `Görsel ${i + 1}`);
       b.addEventListener("click", () => go(i));
       dotsWrap.appendChild(b);
@@ -60,7 +53,6 @@
   }
 
   function paintDots() {
-    if (!dots.length) return;
     dots.forEach((d, i) => d.classList.toggle("active", i === index));
   }
 
@@ -70,58 +62,32 @@
     return i;
   }
 
-  function getGapPx() {
-    // flex gap (modern)
-    const cs = getComputedStyle(track);
-    const gap = cs.gap || cs.columnGap || "0px";
-    const px = parseFloat(gap) || 0;
-    return px;
-  }
-
   function go(i) {
     index = clamp(i);
-
-    const viewportW = viewport.clientWidth || 0;
-    const gapPx = getGapPx();
-
-    // ✅ her adım: viewport genişliği + gap
-    const offset = index * (viewportW + gapPx);
-
-    track.style.transform = `translateX(-${offset}px)`;
+    const w = viewport.clientWidth;
+    viewport.scrollTo({ left: index * w, behavior: "smooth" });
     paintDots();
   }
 
+  // 3) buttons
   if (prevBtn) prevBtn.addEventListener("click", () => go(index - 1));
   if (nextBtn) nextBtn.addEventListener("click", () => go(index + 1));
 
-  // swipe
-  let startX = 0;
-  let dragging = false;
+  // 4) scroll ile index güncelle (swipe sonrası dot doğru kalsın)
+  let raf = 0;
+  viewport.addEventListener("scroll", () => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const w = viewport.clientWidth || 1;
+      const newIndex = Math.round(viewport.scrollLeft / w);
+      if (newIndex !== index) {
+        index = clamp(newIndex);
+        paintDots();
+      }
+    });
+  }, { passive: true });
 
-  slider.addEventListener(
-    "touchstart",
-    (e) => {
-      dragging = true;
-      startX = e.touches[0].clientX;
-    },
-    { passive: true }
-  );
-
-  slider.addEventListener(
-    "touchend",
-    (e) => {
-      if (!dragging) return;
-      dragging = false;
-      const endX = e.changedTouches[0].clientX;
-      const dx = endX - startX;
-      if (Math.abs(dx) < 40) return;
-      if (dx < 0) go(index + 1);
-      else go(index - 1);
-    },
-    { passive: true }
-  );
-
-  // resize fix
+  // resize sonrası aynı slide’a hizala
   window.addEventListener("resize", () => go(index));
 
   // init
