@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ title }}</title>
-  <link rel="stylesheet" href="/static/style.css?v=1004">
+  <link rel="stylesheet" href="/static/style.css?v=1005">
 </head>
 <body>
   <div class="container">
@@ -69,19 +69,36 @@
             <input type="number" name="payable_days" min="0" required>
           </div>
 
+          <!-- ✅ Eski oran soruları kaldırıldı: fx_debt_ratio / fx_revenue_ratio -->
+          <!-- ✅ Yeni: yıllık bazda TL karşılığı tutarlarla soruyoruz (test kendi oranlayacak) -->
+
           <div class="field">
-            <label>3) Döviz borcu / toplam borç (%)</label>
-            <input type="number" name="fx_debt_ratio" min="0" max="100" required>
+            <label>3) Yıllık döviz borcu (TL karşılığı)</label>
+            <input type="number" name="annual_fx_debt_tl" min="0" step="0.01" placeholder="Örn: 12500000" required>
+            <div class="small">Not: USD/EUR fark etmez; toplam döviz borcunun TL karşılığını girin.</div>
           </div>
 
           <div class="field">
-            <label>4) Döviz gelir / toplam gelir (%)</label>
-            <input type="number" name="fx_revenue_ratio" min="0" max="100" required>
+            <label>4) Yıllık TL borcu (TL)</label>
+            <input type="number" name="annual_tl_debt_tl" min="0" step="0.01" placeholder="Örn: 8000000" required>
+            <div class="small">Not: Finansal borçların yıllık bazda toplam TL tutarı.</div>
+          </div>
+
+          <div class="field">
+            <label>5) Yıllık döviz geliri (TL karşılığı)</label>
+            <input type="number" name="annual_fx_revenue_tl" min="0" step="0.01" placeholder="Örn: 22000000" required>
+            <div class="small">Not: İhracat/FX fatura vb. yıllık döviz gelirinin TL karşılığını girin.</div>
+          </div>
+
+          <div class="field">
+            <label>6) Yıllık TL geliri (TL)</label>
+            <input type="number" name="annual_tl_revenue_tl" min="0" step="0.01" placeholder="Örn: 35000000" required>
+            <div class="small">Not: Yurtiçi TL fatura vb. yıllık TL gelirinin toplamı.</div>
           </div>
 
           <div class="field">
             <div class="label-row">
-              <label>5) Nakit tamponu (ay)</label>
+              <label>7) Nakit tamponu (ay)</label>
 
               <!-- Tooltip: hover (desktop) + tap (mobile) -->
               <span class="info" role="button" tabindex="0" aria-label="Formül bilgisi">
@@ -102,14 +119,15 @@
             <input type="number" name="cash_buffer_months" min="0" required>
           </div>
 
+          <!-- ✅ Top 1 yerine Top 3 -->
           <div class="field">
-            <label>6) En büyük müşteri payı (%)</label>
-            <input type="number" name="top_customer_share" min="0" max="100" required>
+            <label>8) En büyük 3 müşteri toplam payı (%)</label>
+            <input type="number" name="top3_customer_share" min="0" max="100" required>
           </div>
 
           <div class="field">
-            <label>7) En büyük müşteri 2 ay ödeme yapmazsa hangi ay nakit açığı oluşur?</label>
-            <select name="top_customer_2m_gap_month" required>
+            <label>9) En büyük 3 müşteri 2 ay ödeme yapmazsa hangi ay nakit açığı oluşur?</label>
+            <select name="top3_customers_2m_gap_month" required>
               <option value="" selected disabled>Seçiniz</option>
               <option value="1">1. ayda</option>
               <option value="2">2. ayda</option>
@@ -122,7 +140,7 @@
           </div>
 
           <div class="field">
-            <label>8) Son 12 ayda plan dışı ödeme ertelemesi yapıldı mı?</label>
+            <label>10) Son 12 ayda plan dışı ödeme ertelemesi yapıldı mı?</label>
             <select name="unplanned_deferral_12m" required>
               <option value="" selected disabled>Seçiniz</option>
               <option value="YES">Evet</option>
@@ -131,7 +149,7 @@
           </div>
 
           <div class="field">
-            <label>9) Son 12 ay gecikme yaşandı mı?</label>
+            <label>11) Son 12 ay gecikme yaşandı mı?</label>
             <select name="delay_issue" required>
               <option value="no">Hayır</option>
               <option value="yes">Evet</option>
@@ -139,12 +157,12 @@
           </div>
 
           <div class="field">
-            <label>10) 12 ay içinde vadesi dolacak borç (%)</label>
+            <label>12) 12 ay içinde vadesi dolacak borç (%)</label>
             <input type="number" name="short_debt_ratio" min="0" max="100" required>
           </div>
 
           <div class="field">
-            <label>11) Limit daralması / teminat baskısı?</label>
+            <label>13) Limit daralması / teminat baskısı?</label>
             <select name="limit_pressure" required>
               <option value="no">Hayır</option>
               <option value="yes">Evet</option>
@@ -152,7 +170,7 @@
           </div>
 
           <div class="field">
-            <label>12) Kur riski yönetimi</label>
+            <label>14) Kur riski yönetimi</label>
             <select name="hedging" required>
               <option value="none">Yok</option>
               <option value="basic">Kısmi</option>
