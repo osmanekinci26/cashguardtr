@@ -4,7 +4,6 @@
 <!-- Hero -->
 <div class="hero">
   <div class="card">
-
     <h1>Büyüme odaklı şirketler için hızlı finansal risk taraması</h1>
 
     <p class="sub">
@@ -13,45 +12,51 @@
       <strong>nakitinizin korunup korunmadığını</strong> 3 dakikada görün.
     </p>
 
-    <!-- 🖼️ GÖRSEL (küçültüldü) -->
-    <div style="margin-top:18px; text-align:center;">
-      <img 
-        src="/static/hero.png" 
-        alt="CashGuard finansal risk taraması"
-        style="
-          width:100%;
-          max-width:680px;
-          border-radius:18px;
-          box-shadow:0 18px 40px rgba(0,0,0,.12);
-        "
-      >
+    <!-- ✅ Ücretsiz vurgulu kutu -->
+    <div class="free-box">
+      <div class="free-pill">✅ ÜCRETSİZ</div>
+      <ul class="free-list">
+        <li><strong>3 dk</strong> ön risk taraması</li>
+        <li><strong>Basit ve net sonuç</strong></li>
+        <li><strong>Ücretsiz PDF rapor</strong></li>
+      </ul>
     </div>
 
-    <!-- 🎯 TESTE GİT BAR -->
-    <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        gap:12px;
-        margin-top:20px;
-        flex-wrap:wrap;
-    ">
+    <!-- ✅ Slider (5 görsel) -->
+    <div class="hero-slider" data-slider>
+      <div class="slides" data-slides>
+        <div class="slide"><img src="/static/hero.png" alt="CashGuard Görsel 1" loading="lazy"></div>
+        <div class="slide"><img src="/static/hero-2.png" alt="CashGuard Görsel 2" loading="lazy"></div>
+        <div class="slide"><img src="/static/hero-3.png" alt="CashGuard Görsel 3" loading="lazy"></div>
+        <div class="slide"><img src="/static/hero-4.png" alt="CashGuard Görsel 4" loading="lazy"></div>
+        <div class="slide"><img src="/static/hero-5.png" alt="CashGuard Görsel 5" loading="lazy"></div>
+      </div>
 
-      <form action="/check" method="get" style="display:flex; gap:10px; flex-wrap:wrap;">
-        <select name="sector" style="min-width:220px;">
+      <button class="slider-btn prev" type="button" aria-label="Önceki görsel" data-prev>‹</button>
+      <button class="slider-btn next" type="button" aria-label="Sonraki görsel" data-next>›</button>
+
+      <div class="dots" aria-label="Görsel seçimi" data-dots></div>
+    </div>
+
+    <hr>
+
+    <!-- 🎯 TESTE GİT -->
+    <div class="hero-cta">
+      <form class="hero-cta-row" action="/check" method="get">
+        <select name="sector" class="hero-sector">
           <option value="defense" selected>Savunma Sanayi</option>
           <option value="construction">İnşaat</option>
           <option value="electrical">Elektrik Taahhüt</option>
           <option value="energy">Enerji</option>
         </select>
 
-        <button class="btn" type="submit">Ücretsiz Teste Başla →</button>
+        <button class="btn hero-start" type="submit">Ücretsiz Teste Başla</button>
       </form>
-
     </div>
 
   </div>
 </div>
+
 
 <!-- Nakit Neden Korunmalı -->
 <div class="section">
@@ -70,7 +75,6 @@
     </div>
   </div>
 </div>
-
 
 <!-- Hızlı Başlangıç -->
 <div class="section">
