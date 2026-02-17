@@ -22,21 +22,24 @@
       </ul>
     </div>
 
-    <!-- ✅ Slider (5 görsel) -->
-    <div class="hero-slider" data-slider>
-      <div class="slides" data-slides>
-        <div class="slide"><img src="/static/hero.png" alt="CashGuard Görsel 1" loading="lazy"></div>
-        <div class="slide"><img src="/static/hero-2.png" alt="CashGuard Görsel 2" loading="lazy"></div>
-        <div class="slide"><img src="/static/hero-3.png" alt="CashGuard Görsel 3" loading="lazy"></div>
-        <div class="slide"><img src="/static/hero-4.png" alt="CashGuard Görsel 4" loading="lazy"></div>
-        <div class="slide"><img src="/static/hero-5.png" alt="CashGuard Görsel 5" loading="lazy"></div>
-      </div>
+    <!-- ⭐ HERO SLIDER -->
+<div class="hero-slider" id="heroSlider">
 
-      <button class="slider-btn prev" type="button" aria-label="Önceki görsel" data-prev>‹</button>
-      <button class="slider-btn next" type="button" aria-label="Sonraki görsel" data-next>›</button>
+  <button class="hs-btn prev" id="hsPrev">‹</button>
+  <button class="hs-btn next" id="hsNext">›</button>
 
-      <div class="dots" aria-label="Görsel seçimi" data-dots></div>
+  <div class="hs-viewport">
+    <div class="hs-track" id="hsTrack">
+      <img src="/static/hero.png" alt="">
+      <img src="/static/hero-2.png" alt="">
+      <img src="/static/hero-3.png" alt="">
+      <img src="/static/hero-4.png" alt="">
+      <img src="/static/hero-5.png" alt="">
     </div>
+  </div>
+
+  <div class="hs-dots" id="hsDots"></div>
+</div>
 
     <hr>
 

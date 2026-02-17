@@ -325,119 +325,96 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 }
 .wa-note{ font-size: 12px; opacity:.75; margin-top: 10px; color: var(--muted); }
 
-/* =========================
-   Home Hero Slider (TEK SİSTEM)
-   index.html yapınla uyumlu:
-   .hero-slider > .slides > .slide > img
-   ========================= */
+/* =========================================================
+   HERO SLIDER — FINAL (responsive & contain images)
+   ========================================================= */
+
 .hero-slider{
-  margin-top: 14px;
-  position: relative;
-  border-radius: 16px;
-  overflow: hidden; /* ✅ alt alta değil, kaydır */
-  border: 1px solid rgba(15,23,42,.10);
-  background: #fff;
+  margin-top:18px;
+  position:relative;
+  border-radius:22px;
+  background:#ffffff;
+  border:1px solid rgba(15,23,42,.08);
+  overflow:hidden;
+  padding:16px 60px; /* oklar için boşluk */
 }
 
-/* Track */
-.hero-slider .slides{
-  display: flex;              /* ✅ yan yana */
-  width: 100%;
-  transform: translateX(0);
-  transition: transform .35s ease;
-  will-change: transform;
+/* viewport */
+.hs-viewport{
+  overflow:hidden;
+  width:100%;
 }
 
-.hero-slider .slide{
-  flex: 0 0 100%;
-  width: 100%;
-}
-
-.hero-slider img{
-  display:block;
-  width: 100%;
-  height: 260px;              /* ✅ küçük */
-  object-fit: cover;          /* istersen contain yap */
-}
-
-/* oklar */
-.hero-slider .slider-btn{
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 42px;
-  height: 42px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.35);
-  background: rgba(0,0,0,.35);
-  color: #fff;
-  font-size: 26px;
-  line-height: 1;
-  cursor: pointer;
+/* track */
+.hs-track{
   display:flex;
-  align-items:center;
-  justify-content:center;
-  backdrop-filter: blur(6px);
-  z-index: 3;
-}
-.hero-slider .slider-btn:hover{ background: rgba(0,0,0,.45); }
-.hero-slider .slider-btn.prev{ left: 10px; }
-.hero-slider .slider-btn.next{ right: 10px; }
-
-/* dots (JS .dot ve .active üretiyor) */
-.hero-slider .dots{
-  position:absolute;
-  left: 0;
-  right: 0;
-  bottom: 10px;
-  display:flex;
-  gap: 8px;
-  justify-content:center;
-  padding: 0 10px;
-  z-index: 3;
-}
-.hero-slider .dot{
-  width: 9px;
-  height: 9px;
-  border-radius: 999px;
-  border: none;
-  background: rgba(255,255,255,.55);
-  cursor: pointer;
-  padding: 0;
-}
-.hero-slider .dot.active{
-  background: rgba(255,255,255,.95);
+  gap:16px;
+  transition:transform .55s cubic-bezier(.22,.61,.36,1);
+  will-change:transform;
 }
 
-/* CTA hizalama: select solda, buton sağda */
-.hero-cta{ margin-top: 14px; }
-.hero-cta-row{
-  display:flex;
-  align-items:center;
-  justify-content: space-between; /* 👈 sağa-sola yaslar */
-  gap: 10px;
-  flex-wrap: wrap;
+/* slide image */
+.hs-track img{
+  flex:0 0 100%;
+  width:100%;
+  height:360px;              /* 🔥 slider büyüdü */
+  object-fit:contain;        /* 🔥 kırpma yok — TAM SIĞDIR */
+  background:#ffffff;
+  border-radius:18px;
 }
-.hero-sector{
-  width: auto;
-  min-width: 240px;
-  max-width: 320px;
-}
-.hero-start{ width: auto; }
 
-/* Mobil */
+/* mobile */
 @media (max-width:700px){
-  .container{ padding:18px 12px; margin:12px auto; border-radius:18px; }
-  h1{ font-size:26px; }
-  h2{ font-size:18px; }
-  p{ font-size:14px; }
-
-  .actions{ flex-direction:column; align-items:stretch; }
-  .btn{ width:100%; text-align:center; padding:12px 14px; }
-
-  .sector-select{ min-width:170px; max-width:220px; }
-
-  .hero-slider img{ height: 210px; }
-  .hero-sector{ width: 100%; min-width: 0; max-width: 100%; }
-  .hero-start{ width: 100%; }
+  .hero-slider{ padding:14px 46px; }
+  .hs-track img{ height:240px; }
 }
+
+/* arrows */
+.hs-btn{
+  position:absolute;
+  top:50%;
+  transform:translateY(-50%);
+  width:44px;
+  height:44px;
+  border-radius:999px;
+  border:1px solid rgba(15,23,42,.12);
+  background:#ffffff;
+  cursor:pointer;
+  font-size:26px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 10px 25px rgba(0,0,0,.15);
+  z-index:3;
+}
+
+.hs-btn.prev{ left:12px; }
+.hs-btn.next{ right:12px; }
+
+.hs-btn:hover{
+  transform:translateY(-50%) scale(1.1);
+}
+
+/* dots */
+.hs-dots{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  margin-top:14px;
+}
+
+.hs-dot{
+  width:10px;
+  height:10px;
+  border-radius:999px;
+  border:none;
+  background:rgba(15,23,42,.20);
+  cursor:pointer;
+  transition:.2s;
+}
+
+.hs-dot.active{
+  background:#0f172a;
+  transform:scale(1.2);
+}
+
