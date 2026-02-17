@@ -13,31 +13,45 @@
       <strong>nakitinizin korunup korunmadığını</strong> 3 dakikada görün.
     </p>
 
-    <!-- ✅ HERO GÖRSEL -->
-    <div style="margin-top:20px;">
+    <!-- 🖼️ GÖRSEL (küçültüldü) -->
+    <div style="margin-top:18px; text-align:center;">
       <img 
         src="/static/hero.png" 
         alt="CashGuard finansal risk taraması"
-        style="width:100%; border-radius:18px; box-shadow:0 18px 40px rgba(0,0,0,.12);"
+        style="
+          width:100%;
+          max-width:680px;
+          border-radius:18px;
+          box-shadow:0 18px 40px rgba(0,0,0,.12);
+        "
       >
     </div>
 
-    <!-- ✅ Ücretsiz teste git BUTON -->
-    <div style="display:flex; justify-content:flex-end; margin-top:18px;">
+    <!-- 🎯 TESTE GİT BAR -->
+    <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:12px;
+        margin-top:20px;
+        flex-wrap:wrap;
+    ">
+
       <form action="/check" method="get" style="display:flex; gap:10px; flex-wrap:wrap;">
-        <select name="sector" style="max-width:240px;">
+        <select name="sector" style="min-width:220px;">
           <option value="defense" selected>Savunma Sanayi</option>
           <option value="construction">İnşaat</option>
           <option value="electrical">Elektrik Taahhüt</option>
           <option value="energy">Enerji</option>
         </select>
+
         <button class="btn" type="submit">Ücretsiz Teste Başla →</button>
       </form>
+
     </div>
 
   </div>
 </div>
-
 
 <!-- Nakit Neden Korunmalı -->
 <div class="section">
