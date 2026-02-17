@@ -23,30 +23,30 @@
     </div>
 
     <!-- ⭐ HERO SLIDER -->
-<div class="hero-slider" id="heroSlider">
+    <div class="hero-slider" id="heroSlider" data-slider>
+      <button class="hs-btn prev" id="hsPrev" type="button" aria-label="Önceki görsel">‹</button>
+      <button class="hs-btn next" id="hsNext" type="button" aria-label="Sonraki görsel">›</button>
 
-  <button class="hs-btn prev" id="hsPrev">‹</button>
-  <button class="hs-btn next" id="hsNext">›</button>
+      <div class="hs-viewport">
+        <div class="hs-track" id="hsTrack">
+          <img src="/static/hero.png"   alt="CashGuard görsel 1" loading="lazy">
+          <img src="/static/hero-2.png" alt="CashGuard görsel 2" loading="lazy">
+          <img src="/static/hero-3.png" alt="CashGuard görsel 3" loading="lazy">
+          <img src="/static/hero-4.png" alt="CashGuard görsel 4" loading="lazy">
+          <img src="/static/hero-5.png" alt="CashGuard görsel 5" loading="lazy">
+          <img src="/static/hero-6.png" alt="CashGuard görsel 6" loading="lazy">
+        </div>
+      </div>
 
-  <div class="hs-viewport">
-    <div class="hs-track" id="hsTrack">
-      <img src="/static/hero.png" alt="">
-      <img src="/static/hero-2.png" alt="">
-      <img src="/static/hero-3.png" alt="">
-      <img src="/static/hero-4.png" alt="">
-      <img src="/static/hero-5.png" alt="">
+      <div class="hs-dots" id="hsDots" data-dots aria-label="Görsel seçimi"></div>
     </div>
-  </div>
-
-  <div class="hs-dots" id="hsDots"></div>
-</div>
 
     <hr>
 
     <!-- 🎯 TESTE GİT -->
     <div class="hero-cta">
       <form class="hero-cta-row" action="/check" method="get">
-        <select name="sector" class="hero-sector">
+        <select name="sector" class="hero-sector" aria-label="Sektör seç">
           <option value="defense" selected>Savunma Sanayi</option>
           <option value="construction">İnşaat</option>
           <option value="electrical">Elektrik Taahhüt</option>
