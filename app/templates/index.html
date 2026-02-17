@@ -3,47 +3,67 @@
 
 <!-- Hero -->
 <div class="hero">
-  <div class="card">
-    <h1>Büyüme odaklı şirketler için hızlı finansal risk taraması</h1>
+  <div class="card hero-card">
 
-    <p class="sub">
-      <strong>cashguardtr.com</strong> — Savunma Sanayi, İnşaat, Elektrik Taahhüt ve Enerji sektörleri için:
-      vade makası, kur uyumsuzluğu, müşteri yoğunlaşması ve borç baskısını,
-      <strong>nakitinizin korunup korunmadığını</strong> 3 dakikada görün.
-    </p>
+    <!-- Outcome odaklı başlık -->
+    <div class="hero-top">
+      <div>
+        <div class="hero-badges">
+          <span class="hb">3 dk sürer</span>
+          <span class="hb">Ücretsiz PDF rapor</span>
+          <span class="hb">Online CFO bakışı</span>
+        </div>
 
-    <!-- ✅ Ücretsiz vurgulu kutu -->
+        <h1>Şirketiniz kârlı ama nakitiniz sürekli sıkışıyor mu?</h1>
+
+        <p class="sub">
+          <strong>3 dakikada</strong> nakit riskinizi görün — kriz gelmeden önlem alın.
+          <br>
+          <span class="sub2">Online CFO bakışıyla şirketinizi analiz edin, bankaya yakalanmadan riski görün.</span>
+        </p>
+      </div>
+
+      <!-- Sağ tarafta mini “risk bar” örneği -->
+      <div class="hero-mini">
+        <div class="mini-title">Örnek skor</div>
+        <div class="riskbar">
+          <span class="g"></span><span class="y"></span><span class="r"></span>
+          <i class="marker" style="left:62%"></i>
+        </div>
+        <div class="mini-note">Risk seviyesi: <strong>Sarı</strong></div>
+      </div>
+    </div>
+
+    <!-- Ücretsiz kutu -->
     <div class="free-box">
       <div class="free-pill">✅ ÜCRETSİZ</div>
       <ul class="free-list">
         <li><strong>3 dk</strong> ön risk taraması</li>
-        <li><strong>Basit ve net sonuç</strong></li>
-        <li><strong>Ücretsiz PDF rapor</strong></li>
+        <li><strong>Basit ve net sonuç</strong> (Yeşil / Sarı / Kırmızı)</li>
+        <li><strong>Ücretsiz PDF rapor</strong> (mailinize gelir)</li>
       </ul>
     </div>
 
-    <!-- ⭐ HERO SLIDER -->
-    <div class="hero-slider" id="heroSlider" data-slider>
-      <button class="hs-btn prev" id="hsPrev" type="button" aria-label="Önceki görsel">‹</button>
-      <button class="hs-btn next" id="hsNext" type="button" aria-label="Sonraki görsel">›</button>
+    <!-- ⭐ HERO SLIDER (dashboard/mockup alanı) -->
+    <div class="hero-slider" id="heroSlider">
+      <button class="hs-btn prev" id="hsPrev" type="button" aria-label="Önceki">‹</button>
+      <button class="hs-btn next" id="hsNext" type="button" aria-label="Sonraki">›</button>
 
       <div class="hs-viewport">
         <div class="hs-track" id="hsTrack">
-          <img src="/static/hero.png"   alt="CashGuard görsel 1" loading="lazy">
-          <img src="/static/hero-2.png" alt="CashGuard görsel 2" loading="lazy">
-          <img src="/static/hero-3.png" alt="CashGuard görsel 3" loading="lazy">
-          <img src="/static/hero-4.png" alt="CashGuard görsel 4" loading="lazy">
-          <img src="/static/hero-5.png" alt="CashGuard görsel 5" loading="lazy">
-          <img src="/static/hero-6.png" alt="CashGuard görsel 6" loading="lazy">
+          <img src="/static/hero.png" alt="CashGuard örnek ekran 1" loading="lazy">
+          <img src="/static/hero-2.png" alt="CashGuard örnek ekran 2" loading="lazy">
+          <img src="/static/hero-3.png" alt="CashGuard örnek ekran 3" loading="lazy">
+          <img src="/static/hero-4.png" alt="CashGuard örnek ekran 4" loading="lazy">
+          <img src="/static/hero-5.png" alt="CashGuard örnek ekran 5" loading="lazy">
+          <img src="/static/hero-6.png" alt="CashGuard örnek ekran 6" loading="lazy">
         </div>
       </div>
 
-      <div class="hs-dots" id="hsDots" data-dots aria-label="Görsel seçimi"></div>
+      <div class="hs-dots" id="hsDots" aria-label="Görsel seçimi"></div>
     </div>
 
-    <hr>
-
-    <!-- 🎯 TESTE GİT -->
+    <!-- 🎯 Primary CTA -->
     <div class="hero-cta">
       <form class="hero-cta-row" action="/check" method="get">
         <select name="sector" class="hero-sector" aria-label="Sektör seç">
@@ -53,77 +73,193 @@
           <option value="energy">Enerji</option>
         </select>
 
-        <button class="btn hero-start" type="submit">Ücretsiz Teste Başla</button>
+        <button class="btn hero-start" type="submit">Ücretsiz Nakit Risk Analizi Yap</button>
       </form>
+
+      <div class="hero-trustline">
+        <span>✓ Kredi/limit baskısını erken gör</span>
+        <span>✓ Kur + vade uyumsuzluğunu yakala</span>
+        <span>✓ Müşteri yoğunlaşmasını ölç</span>
+      </div>
     </div>
 
   </div>
 </div>
 
-
-<!-- Nakit Neden Korunmalı -->
-<div class="section">
+<!-- 1) Problem -->
+<div class="section" id="problem">
   <div class="card">
-    <div class="section-title">Nakit Neden Korunmalı?</div>
+    <div class="section-title">Nakit krizi çoğu zaman kâr tablosunda görünmez</div>
+    <div class="two-col">
+      <div>
+        <p><strong>Kâr sizi “iyi” gösterebilir; nakit ise sizi hayatta tutar.</strong></p>
+        <p>
+          Türkiye gibi yüksek enflasyon ve oynak kur ortamında şirketler kârlı olduğu hâlde zorlanır:
+          tahsilat gecikir, kur farkı büyür, limitler sıkışır, tedarikçi peşin ister.
+        </p>
+        <div class="actions" style="margin-top:12px;">
+          <a class="btn secondary" href="/why-cash">Detayı Oku</a>
+          <a class="btn secondary" href="/contact">İletişime Geç</a>
+        </div>
+      </div>
 
-    <p><strong>Kâr sizi “iyi” gösterebilir; nakit ise sizi hayatta tutar.</strong></p>
-    <p>
-      Türkiye gibi yüksek enflasyon ve oynak kur ortamında şirketler çoğu zaman kârlı olduğu hâlde zorlanır:
-      tahsilat gecikir, kur farkı büyür, limitler sıkışır, tedarikçi peşin ister.
-    </p>
-
-    <div class="actions" style="margin-top:12px;">
-      <a class="btn secondary" href="/why-cash">Detayı Oku</a>
-      <a class="btn secondary" href="/contact">İletişime Geç</a>
+      <div class="callout">
+        <h3>Tipik sinyaller</h3>
+        <ul class="free-list" style="margin-top:8px;">
+          <li>Tahsilat günleri uzuyor, ödeme baskısı artıyor</li>
+          <li>Kur riski var ama ölçümlü yönetim yok</li>
+          <li>En büyük müşteriye bağımlılık yükseliyor</li>
+          <li>12 ay içinde vadesi gelen borç oranı yüksek</li>
+        </ul>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Hızlı Başlangıç -->
-<div class="section">
+<!-- 2) Riskler -->
+<div class="section" id="risks">
   <div class="card">
-    <div class="section-title">Hızlı Başlangıç</div>
+    <div class="section-title">CashGuard neyi ölçer?</div>
 
     <div class="features">
       <div class="feature">
-        <h3>Hakkında</h3>
-        <p>Limit makyajı değil; ölçülebilir göstergelerle karar desteği ve nakit koruması.</p>
-        <div class="actions" style="margin-top:10px;">
-          <a class="btn secondary" href="/about">Detay</a>
+        <h3>Vade makası</h3>
+        <p>Tahsilat–ödeme farkı nakit açığı doğurur.</p>
+      </div>
+      <div class="feature">
+        <h3>Kur uyumsuzluğu</h3>
+        <p>Gelir/borç para birimi farklıysa şokta zarar büyür.</p>
+      </div>
+      <div class="feature">
+        <h3>Müşteri yoğunlaşması</h3>
+        <p>3 müşteri gecikmesi bile zinciri kırabilir.</p>
+      </div>
+      <div class="feature">
+        <h3>Limit / teminat baskısı</h3>
+        <p>Bankadan önce risk sinyalini yakalayın.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 3) Çözüm / Nasıl çalışır -->
+<div class="section" id="how">
+  <div class="card">
+    <div class="section-title">Nasıl çalışır?</div>
+
+    <div class="timeline">
+      <div class="step">
+        <div class="icon">
+          <!-- clipboard -->
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2h6a2 2 0 0 1 2 2v1h1a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1V4a2 2 0 0 1 2-2zm0 3h6V4H9v1z"/></svg>
+        </div>
+        <div>
+          <div class="step-title">STEP 1 — 3 dk test</div>
+          <div class="step-text">Kısa sorularla nakit riskini ölç.</div>
         </div>
       </div>
 
-      <div class="feature">
-        <h3>Biz Kimiz</h3>
-        <p>Aylık tek kullanımlık CFO’nuz.</p>
-        <div class="actions" style="margin-top:10px;">
-          <a class="btn secondary" href="/team">Detay</a>
+      <div class="step">
+        <div class="icon">
+          <!-- gauge -->
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 0 1 9 9 8.9 8.9 0 0 1-2.1 5.8l-1.5-1.3A6.9 6.9 0 0 0 19 12a7 7 0 0 0-14 0 6.9 6.9 0 0 0 1.6 4.5L5.1 17.8A8.9 8.9 0 0 1 3 12a9 9 0 0 1 9-9zm.8 5.2 1.8 1.8-2.3 4.6a1.2 1.2 0 0 1-1.6.5 1.2 1.2 0 0 1-.5-1.6l4.6-2.3z"/></svg>
+        </div>
+        <div>
+          <div class="step-title">STEP 2 — Risk skor</div>
+          <div class="step-text">Yeşil / Sarı / Kırmızı + özet içgörüler.</div>
         </div>
       </div>
 
-      <div class="feature">
-        <h3>Hizmetler</h3>
-        <p>Test → analiz → aksiyon planı. Online veya hibrit çalışma.</p>
-        <div class="actions" style="margin-top:10px;">
-          <a class="btn secondary" href="/services">Detay</a>
+      <div class="step">
+        <div class="icon">
+          <!-- plan -->
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3h16a1 1 0 0 1 1 1v16l-4-2-4 2-4-2-4 2V4a1 1 0 0 1 1-1zm4 5h8v2H8V8zm0 4h8v2H8v-2z"/></svg>
+        </div>
+        <div>
+          <div class="step-title">STEP 3 — CFO aksiyon planı</div>
+          <div class="step-text">PDF raporda “ne yapmalı?” listesi.</div>
         </div>
       </div>
+    </div>
 
-      <div class="feature">
-        <h3>İletişim</h3>
-        <p>Pilot müşteri görüşmesi ve demo için bize ulaşın.<br><strong>rapor@cashguardtr.com</strong></p>
-        <div class="actions" style="margin-top:10px;">
-          <a class="btn secondary" href="/contact">Detay</a>
+    <div class="actions" style="margin-top:14px;">
+      <a class="btn" href="/check?sector=defense">3 Dakikalık CFO Testini Başlat</a>
+      <a class="btn secondary" href="/contact">Demo / Pilot Görüşme</a>
+    </div>
+  </div>
+</div>
+
+<!-- 4) Kimler için (Persona) -->
+<div class="section" id="who">
+  <div class="card">
+    <div class="section-title">Kimler için?</div>
+
+    <div class="persona-grid">
+      <div class="persona">
+        <div class="p-title">Büyüme odaklı şirketler</div>
+        <div class="p-text">Hızlı büyürken nakit döngüsü bozulmasın.</div>
+        <div class="p-badge">10M+ ciro</div>
+      </div>
+
+      <div class="persona">
+        <div class="p-title">Proje firmaları</div>
+        <div class="p-text">Tahsilat vadeleri uzunsa risk erken çıkar.</div>
+        <div class="p-badge">Vade makası</div>
+      </div>
+
+      <div class="persona">
+        <div class="p-title">Kredi kullanan şirketler</div>
+        <div class="p-text">Vade/limit/teminat baskısını önceden gör.</div>
+        <div class="p-badge">Limit baskısı</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 5) Örnek çıktı / Güven (Trust) -->
+<div class="section" id="trust">
+  <div class="card">
+    <div class="section-title">Güven — “Bu normal danışmanlık mı?” değil, ölçümlü bir platform</div>
+
+    <div class="two-col">
+      <div class="founder">
+        <h3>Yaklaşım</h3>
+        <p>
+          CashGuard, “hissettim” değil “ölçtüm” diyen bir ön tarama mantığıyla çalışır.
+          Test çıktısı; riski, nedeni ve bir sonraki adımı netleştirir.
+        </p>
+        <ul class="free-list" style="margin-top:10px;">
+          <li>Net skor + risk seviyesi</li>
+          <li>PDF rapor (mail)</li>
+          <li>Öncelikli aksiyon listesi</li>
+        </ul>
+      </div>
+
+      <div class="testimonials">
+        <div class="t-card">
+          <div class="t-quote">“Rapor, bankaya gitmeden önce zayıf noktayı gösterdi.”</div>
+          <div class="t-meta">Pilot müşteri • Proje firması</div>
+        </div>
+        <div class="t-card">
+          <div class="t-quote">“3 dakika sürüp ‘ne yapacağımı’ netleştirdi.”</div>
+          <div class="t-meta">Pilot müşteri • İmalat/taahhüt</div>
         </div>
       </div>
     </div>
 
     <hr>
+
     <div class="actions">
-      <a class="btn" href="/check?sector=defense">Teste Git</a>
-      <a class="btn secondary" href="/contact">İletişim</a>
+      <a class="btn" href="/check?sector=defense">Ücretsiz Nakit Risk Analizi Yap</a>
+      <a class="btn secondary" href="/services">Hizmetleri Gör</a>
     </div>
   </div>
 </div>
+
+<!-- Sticky CTA (conversion) -->
+<a class="sticky-cta" href="/check?sector=defense" aria-label="Ücretsiz test başlat">
+  <span class="s-title">Ücretsiz Nakit Risk Analizi</span>
+  <span class="s-sub">3 dk sürer • PDF rapor</span>
+</a>
 
 {% endblock %}
