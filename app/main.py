@@ -4,6 +4,7 @@ from io import BytesIO
 import os
 import json
 import shutil
+from typing import Optional
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -110,6 +111,24 @@ def _sanitize_sector(sector: str | None) -> str:
     return s if s in SECTOR_LABELS else "defense"
 
 
+def _pct(part: float, total: float) -> int:
+    try:
+        part = float(part or 0)
+        total = float(total or 0)
+        if total <= 0:
+            return 0
+        return int(round((part / total) * 100))
+    except Exception:
+        return 0
+
+
+def _clamp_pct(v: int) -> int:
+    try:
+        return max(0, min(100, int(v)))
+    except Exception:
+        return 0
+
+
 # =========================
 # PUBLIC ROUTES
 # =========================
@@ -134,19 +153,50 @@ def result(
     sector: str = Form("defense"),
     collection_days: int = Form(...),
     payable_days: int = Form(...),
-    fx_debt_ratio: int = Form(...),
-    fx_revenue_ratio: int = Form(...),
+
+    # ✅ eski alanlar optional (422 bitmesi için)
+    fx_debt_ratio: Optional[int] = Form(None),
+    fx_revenue_ratio: Optional[int] = Form(None),
+
     cash_buffer_months: int = Form(...),
-    top_customer_share: int = Form(...),
-    top_customer_2m_gap_month: int = Form(...),
+
+    top_customer_share: Optional[int] = Form(None),
+    top_customer_2m_gap_month: Optional[int] = Form(None),
+
     unplanned_deferral_12m: str = Form(...),
     delay_issue: str = Form(...),
     short_debt_ratio: int = Form(...),
     limit_pressure: str = Form(...),
     hedging: str = Form(...),
+
+    # ✅ yeni: yıllık tutarlar (check.html gönderirse oranı backend hesaplar)
+    fx_debt_amount: Optional[float] = Form(None),
+    tl_debt_amount: Optional[float] = Form(None),
+    fx_revenue_amount: Optional[float] = Form(None),
+    tl_revenue_amount: Optional[float] = Form(None),
+
+    # ✅ yeni: en büyük 3 müşteri toplam payı gibi (istersen check.html’de kullan)
+    top3_customer_share: Optional[int] = Form(None),
 ):
     sector = _sanitize_sector(sector)
     sector_label = SECTOR_LABELS[sector]
+
+    # --- oranları yeni tutarlardan hesapla (eski ratio gelmediyse) ---
+    if fx_debt_ratio is None and (fx_debt_amount is not None) and (tl_debt_amount is not None):
+        fx_debt_ratio = _pct(fx_debt_amount, float(fx_debt_amount) + float(tl_debt_amount))
+
+    if fx_revenue_ratio is None and (fx_revenue_amount is not None) and (tl_revenue_amount is not None):
+        fx_revenue_ratio = _pct(fx_revenue_amount, float(fx_revenue_amount) + float(tl_revenue_amount))
+
+    # --- müşteri konsantrasyonu: top_customer_share yoksa top3'ten besle ---
+    if top_customer_share is None and top3_customer_share is not None:
+        top_customer_share = _clamp_pct(top3_customer_share)
+
+    # --- fallback: hiçbir şey gelmezse akış kırılmasın ---
+    fx_debt_ratio = _clamp_pct(fx_debt_ratio if fx_debt_ratio is not None else 0)
+    fx_revenue_ratio = _clamp_pct(fx_revenue_ratio if fx_revenue_ratio is not None else 0)
+    top_customer_share = _clamp_pct(top_customer_share if top_customer_share is not None else 0)
+    top_customer_2m_gap_month = int(top_customer_2m_gap_month) if top_customer_2m_gap_month is not None else 99
 
     score, level, messages = calculate_risk(
         sector=sector,
@@ -199,20 +249,47 @@ def result_pdf(
     sector: str = Form("defense"),
     collection_days: int = Form(...),
     payable_days: int = Form(...),
-    fx_debt_ratio: int = Form(...),
-    fx_revenue_ratio: int = Form(...),
+
+    # ✅ eski alanlar optional
+    fx_debt_ratio: Optional[int] = Form(None),
+    fx_revenue_ratio: Optional[int] = Form(None),
+
     cash_buffer_months: int = Form(...),
-    top_customer_share: int = Form(...),
-    top_customer_2m_gap_month: int = Form(...),
+
+    top_customer_share: Optional[int] = Form(None),
+    top_customer_2m_gap_month: Optional[int] = Form(None),
+
     unplanned_deferral_12m: str = Form(...),
     delay_issue: str = Form(...),
     short_debt_ratio: int = Form(...),
     limit_pressure: str = Form(...),
     hedging: str = Form(...),
+
+    # ✅ yeni tutarlar
+    fx_debt_amount: Optional[float] = Form(None),
+    tl_debt_amount: Optional[float] = Form(None),
+    fx_revenue_amount: Optional[float] = Form(None),
+    tl_revenue_amount: Optional[float] = Form(None),
+    top3_customer_share: Optional[int] = Form(None),
+
     company: str = Form(""),
 ):
     sector = _sanitize_sector(sector)
     sector_label = SECTOR_LABELS[sector]
+
+    if fx_debt_ratio is None and (fx_debt_amount is not None) and (tl_debt_amount is not None):
+        fx_debt_ratio = _pct(fx_debt_amount, float(fx_debt_amount) + float(tl_debt_amount))
+
+    if fx_revenue_ratio is None and (fx_revenue_amount is not None) and (tl_revenue_amount is not None):
+        fx_revenue_ratio = _pct(fx_revenue_amount, float(fx_revenue_amount) + float(tl_revenue_amount))
+
+    if top_customer_share is None and top3_customer_share is not None:
+        top_customer_share = _clamp_pct(top3_customer_share)
+
+    fx_debt_ratio = _clamp_pct(fx_debt_ratio if fx_debt_ratio is not None else 0)
+    fx_revenue_ratio = _clamp_pct(fx_revenue_ratio if fx_revenue_ratio is not None else 0)
+    top_customer_share = _clamp_pct(top_customer_share if top_customer_share is not None else 0)
+    top_customer_2m_gap_month = int(top_customer_2m_gap_month) if top_customer_2m_gap_month is not None else 99
 
     score, level, messages = calculate_risk(
         sector=sector,
@@ -266,21 +343,48 @@ def result_email(
     sector: str = Form("defense"),
     collection_days: int = Form(...),
     payable_days: int = Form(...),
-    fx_debt_ratio: int = Form(...),
-    fx_revenue_ratio: int = Form(...),
+
+    # ✅ eski alanlar optional
+    fx_debt_ratio: Optional[int] = Form(None),
+    fx_revenue_ratio: Optional[int] = Form(None),
+
     cash_buffer_months: int = Form(...),
-    top_customer_share: int = Form(...),
-    top_customer_2m_gap_month: int = Form(...),
+
+    top_customer_share: Optional[int] = Form(None),
+    top_customer_2m_gap_month: Optional[int] = Form(None),
+
     unplanned_deferral_12m: str = Form(...),
     delay_issue: str = Form(...),
     short_debt_ratio: int = Form(...),
     limit_pressure: str = Form(...),
     hedging: str = Form(...),
+
+    # ✅ yeni tutarlar
+    fx_debt_amount: Optional[float] = Form(None),
+    tl_debt_amount: Optional[float] = Form(None),
+    fx_revenue_amount: Optional[float] = Form(None),
+    tl_revenue_amount: Optional[float] = Form(None),
+    top3_customer_share: Optional[int] = Form(None),
+
     company: str = Form(""),
     email: str = Form(...),
 ):
     sector = _sanitize_sector(sector)
     sector_label = SECTOR_LABELS[sector]
+
+    if fx_debt_ratio is None and (fx_debt_amount is not None) and (tl_debt_amount is not None):
+        fx_debt_ratio = _pct(fx_debt_amount, float(fx_debt_amount) + float(tl_debt_amount))
+
+    if fx_revenue_ratio is None and (fx_revenue_amount is not None) and (tl_revenue_amount is not None):
+        fx_revenue_ratio = _pct(fx_revenue_amount, float(fx_revenue_amount) + float(tl_revenue_amount))
+
+    if top_customer_share is None and top3_customer_share is not None:
+        top_customer_share = _clamp_pct(top3_customer_share)
+
+    fx_debt_ratio = _clamp_pct(fx_debt_ratio if fx_debt_ratio is not None else 0)
+    fx_revenue_ratio = _clamp_pct(fx_revenue_ratio if fx_revenue_ratio is not None else 0)
+    top_customer_share = _clamp_pct(top_customer_share if top_customer_share is not None else 0)
+    top_customer_2m_gap_month = int(top_customer_2m_gap_month) if top_customer_2m_gap_month is not None else 99
 
     score, level, messages = calculate_risk(
         sector=sector,
