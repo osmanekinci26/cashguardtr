@@ -1,62 +1,93 @@
 (function () {
-  const slider = document.querySelector("[data-slider]");
-  if (!slider) return;
+  function initSlider(root) {
+    const slidesWrap = root.querySelector("[data-slides]");
+    if (!slidesWrap) return;
 
-  const slidesEl = slider.querySelector("[data-slides]");
-  const slides = Array.from(slider.querySelectorAll(".slide"));
-  const prevBtn = slider.querySelector("[data-prev]");
-  const nextBtn = slider.querySelector("[data-next]");
-  const dotsEl = slider.querySelector("[data-dots]");
+    const slides = Array.from(slidesWrap.children);
+    if (!slides.length) return;
 
-  let idx = 0;
-  let timer = null;
+    const btnPrev = root.querySelector("[data-prev]");
+    const btnNext = root.querySelector("[data-next]");
+    const dotsWrap = root.querySelector("[data-dots]");
 
-  function go(i) {
-    idx = (i + slides.length) % slides.length;
-    slidesEl.style.transform = `translateX(-${idx * 100}%)`;
-    if (dotsEl) {
-      dotsEl.querySelectorAll("button").forEach((b, bi) => {
-        b.classList.toggle("active", bi === idx);
+    let index = 0;
+    let timer = null;
+
+    function setX() {
+      slidesWrap.style.transform = `translateX(${-index * 100}%)`;
+    }
+
+    function renderDots() {
+      if (!dotsWrap) return;
+      dotsWrap.innerHTML = "";
+      slides.forEach((_, i) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "dot" + (i === index ? " active" : "");
+        b.setAttribute("aria-label", `${i + 1}. görsel`);
+        b.addEventListener("click", () => {
+          go(i);
+          restart();
+        });
+        dotsWrap.appendChild(b);
       });
     }
+
+    function go(i) {
+      index = (i + slides.length) % slides.length;
+      setX();
+      renderDots();
+    }
+
+    function stop() {
+      if (timer) clearInterval(timer);
+      timer = null;
+    }
+
+    function start() {
+      stop();
+      timer = setInterval(() => go(index + 1), 3500);
+    }
+
+    function restart() {
+      start();
+    }
+
+    if (btnPrev) btnPrev.addEventListener("click", () => { go(index - 1); restart(); });
+    if (btnNext) btnNext.addEventListener("click", () => { go(index + 1); restart(); });
+
+    // hover pause
+    root.addEventListener("mouseenter", stop);
+    root.addEventListener("mouseleave", start);
+
+    // swipe (mobile)
+    let x0 = null;
+    root.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; }, { passive: true });
+    root.addEventListener("touchend", (e) => {
+      if (x0 === null) return;
+      const x1 = e.changedTouches[0].clientX;
+      const dx = x1 - x0;
+      x0 = null;
+      if (Math.abs(dx) < 35) return;
+      if (dx > 0) go(index - 1);
+      else go(index + 1);
+      restart();
+    }, { passive: true });
+
+    // init
+    go(0);
+    start();
   }
 
-  function buildDots() {
-    if (!dotsEl) return;
-    dotsEl.innerHTML = "";
-    slides.forEach((_, i) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.setAttribute("aria-label", `Görsel ${i + 1}`);
-      b.addEventListener("click", () => {
-        stop();
-        go(i);
-        start();
-      });
-      dotsEl.appendChild(b);
-    });
+  function boot() {
+    const sliders = document.querySelectorAll("[data-slider]");
+    if (!sliders.length) return;
+    sliders.forEach(initSlider);
   }
 
-  function start() {
-    stop();
-    timer = setInterval(() => go(idx + 1), 4500);
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
   }
-
-  function stop() {
-    if (timer) clearInterval(timer);
-    timer = null;
-  }
-
-  buildDots();
-  go(0);
-  start();
-
-  prevBtn?.addEventListener("click", () => { stop(); go(idx - 1); start(); });
-  nextBtn?.addEventListener("click", () => { stop(); go(idx + 1); start(); });
-
-  // hover/touch pause
-  slider.addEventListener("mouseenter", stop);
-  slider.addEventListener("mouseleave", start);
 })();
-
-
