@@ -1230,6 +1230,31 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     color: var(--text) !important;
   }
 }
+/* ===== Sticky CTA: gerçek fixed + scroll’da görünür ===== */
+.sticky-cta{
+  position: fixed !important;
+  left: 50% !important;
+  bottom: 16px !important;
+  transform: translateX(-50%) translateY(120%) !important; /* başlangıçta aşağıda gizli */
+  opacity: 0 !important;
+  pointer-events: none !important;
+
+  width: calc(100% - 24px) !important;
+  max-width: 980px !important;
+  z-index: 99999 !important;
+
+  transition: transform .25s ease, opacity .25s ease !important;
+}
+
+/* görünür hali */
+.sticky-cta.is-visible{
+  transform: translateX(-50%) translateY(0) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* alttan çakışmayı önle */
+.container{ padding-bottom: 96px !important; }
 
 
 

@@ -97,6 +97,24 @@
   </script>
   <!-- ===== /WhatsApp Live Support (Global) ===== -->
 
+  <!-- ✅ Sticky CTA: scroll ile görünür (site genelinde güvenli) -->
+  <script>
+    (() => {
+      const cta = document.querySelector(".sticky-cta");
+      if (!cta) return;
+
+      const showAfter = 260; // px
+
+      const onScroll = () => {
+        if (window.scrollY > showAfter) cta.classList.add("is-visible");
+        else cta.classList.remove("is-visible");
+      };
+
+      window.addEventListener("scroll", onScroll, { passive: true });
+      onScroll();
+    })();
+  </script>
+
   <!-- ✅ Homepage slider script (safe on other pages too) -->
   <script src="/static/slider.js?v=2"></script>
 </body>
