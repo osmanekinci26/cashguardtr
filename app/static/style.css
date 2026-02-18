@@ -971,6 +971,77 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   flex-direction:column;
   justify-content:center;
 }
+/* =========================
+   MOBILE POLISH (Header + Badges)
+   ========================= */
+@media (max-width:700px){
+
+  /* Container biraz daha nefes alsın */
+  .container{ padding:16px 12px; }
+
+  /* HEADER: linkleri 2 sütun yap (chip gibi) */
+  .header-inner{
+    padding: 10px 12px;
+    flex-wrap: wrap;        /* satır kırılabilir */
+    gap: 10px;
+  }
+
+  .brand{
+    flex: 1 1 100%;         /* CashGuard tek satırda */
+  }
+
+  .navlinks{
+    margin-left: 0;
+    width: 100%;
+    display: grid;          /* ✅ 2 sütun */
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    justify-content: stretch;
+  }
+
+  .navlinks a{
+    display:block;
+    text-align:center;
+    padding: 10px 10px;
+    border-radius: 12px;
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.14);
+    color: rgba(255,255,255,.92);
+    font-weight: 800;
+    line-height: 1.05;
+  }
+
+  .navlinks a:hover{ background: rgba(255,255,255,.16); }
+
+  /* HERO BADGES: yan yana + wrap, sıkışmasın */
+  .hero-badges{
+    display:flex;
+    flex-wrap: wrap;        /* ✅ sığmazsa alt satıra */
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .hero-badges .hb{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding: 8px 10px;
+    border-radius: 999px;
+    font-weight: 900;
+    font-size: 12px;
+    white-space: nowrap;    /* rozet tek parça kalsın */
+    background: rgba(15,23,42,.06);
+    border: 1px solid rgba(15,23,42,.10);
+  }
+
+  /* Hero başlık/sub biraz nefes */
+  .hero h1{ font-size: 24px; line-height:1.2; margin-bottom:10px; }
+  .hero .sub{ font-size: 14px; }
+
+  /* Video + kutular arası boşluk */
+  .hero-video{ margin: 12px 0 14px 0; }
+  .hero-mid{ gap: 12px !important; margin-bottom: 14px; }
+}
 
 
 
