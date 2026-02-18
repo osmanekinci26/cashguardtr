@@ -777,5 +777,39 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .hero-cta{
   margin-top:28px;
 }
+/* ===== PAGE HERO IMAGE ===== */
+
+.page-hero-img{
+  max-width:1100px;
+  margin:20px auto 10px auto;
+  padding:0 18px;
+}
+
+.page-hero-img img{
+  width:100%;
+  height:420px;           /* ana sayfa video yüksekliği ile aynı */
+  object-fit:cover;
+  border-radius:18px;
+  box-shadow:0 18px 40px rgba(0,0,0,.18);
+}
+/* ===== ABOUT PAGE LOGO GRID ===== */
+
+.about-grid{
+  align-items:center;
+  gap:30px;
+}
+
+.about-logo-wrap{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.about-logo-wrap img{
+  width:100%;
+  max-width:260px;
+  opacity:.95;
+  filter: drop-shadow(0 10px 25px rgba(0,0,0,.15));
+}
 
 
