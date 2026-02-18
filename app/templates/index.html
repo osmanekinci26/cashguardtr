@@ -34,41 +34,29 @@
         playsinline
         preload="auto"
       >
-        <source src="/static/hero-video.mp4" type="video/mp4">
+        <source src="{{ url_for('static', path='hero-video.mp4') }}" type="video/mp4">
       </video>
     </div>
 
-    <!-- Video altında: Örnek skor + Ücretsiz kutu -->
+    <!-- Video altında: Örnek çıktı görseli + Ücretsiz kutu (yan yana, simetrik) -->
     <div class="hero-mid" style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; align-items:stretch; margin-bottom:18px;">
 
-      <!-- Sağ tarafta mini “risk bar” örneği -->
-<div class="hero-mini">
-  <div class="mini-title">Örnek skor</div>
-  <div class="riskbar">
-    <span class="g"></span><span class="y"></span><span class="r"></span>
-    <i class="marker" style="left:62%"></i>
-  </div>
-  <div class="mini-note">Risk seviyesi: <strong>Sarı</strong></div>
-</div>
+      <!-- SOL: Örnek çıktı görseli -->
+      <div class="hero-sample">
+        <img src="{{ url_for('static', path='hero-8.png') }}" alt="CashGuard örnek skor çıktısı" loading="lazy">
+      </div>
 
-      <div class="hero-free-row">
+      <!-- SAĞ: Ücretsiz kutu -->
+      <div class="free-box">
+        <div class="free-pill">✅ ÜCRETSİZ</div>
+        <ul class="free-list">
+          <li><strong>3 dk</strong> ön risk taraması</li>
+          <li><strong>Basit ve net sonuç</strong> (Yeşil / Sarı / Kırmızı)</li>
+          <li><strong>Ücretsiz PDF rapor</strong> (mailinize gelir)</li>
+        </ul>
+      </div>
 
-  <!-- SOL: Örnek çıktı görseli -->
-  <div class="hero-sample">
-    <img src="/static/hero-8.png" alt="CashGuard örnek skor çıktısı">
-  </div>
-
-  <!-- SAĞ: Ücretsiz kutu -->
-  <div class="free-box">
-    <div class="free-pill">✅ ÜCRETSİZ</div>
-    <ul class="free-list">
-      <li><strong>3 dk</strong> ön risk taraması</li>
-      <li><strong>Basit ve net sonuç</strong> (Yeşil / Sarı / Kırmızı)</li>
-      <li><strong>Ücretsiz PDF rapor</strong> (mailinize gelir)</li>
-    </ul>
-  </div>
-
-</div>
+    </div>
 
     <!-- 🎯 Primary CTA -->
     <div class="hero-cta" style="margin-top:6px;">
