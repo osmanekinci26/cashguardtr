@@ -714,5 +714,68 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     height: 220px;
   }
 }
+/* ================================
+   GLOBAL SPACING IMPROVEMENT
+================================ */
+
+.hero-title{ 
+  font-size:32px; 
+  margin-bottom:10px;
+}
+
+.hero-subtitle{
+  font-size:22px;
+  color:#0f172a;
+  margin-bottom:8px;
+}
+
+.hero-desc{
+  font-size:16px;
+  margin-bottom:24px;
+}
+
+/* her blok arası boşluk */
+.card > *{
+  margin-top:22px;
+}
+.card > *:first-child{
+  margin-top:0;
+}
+
+/* ================================
+   HERO VIDEO (FINAL SIZE)
+================================ */
+
+.hero-video{
+  width:100%;
+  border-radius:18px;
+  overflow:hidden;
+  border:1px solid rgba(15,23,42,.08);
+  box-shadow:0 20px 50px rgba(15,23,42,.12);
+}
+
+.hero-video video{
+  width:100%;
+  height:420px;       /* masaüstü boyut */
+  object-fit:cover;
+  display:block;
+}
+
+/* mobil */
+@media (max-width:700px){
+  .hero-video video{
+    height:260px;
+  }
+}
+
+/* ücretsiz kutu spacing */
+.free-box{
+  margin-top:28px;
+}
+
+/* CTA spacing */
+.hero-cta{
+  margin-top:28px;
+}
 
 
