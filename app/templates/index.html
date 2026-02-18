@@ -44,24 +44,21 @@
       </ul>
     </div>
 
-    <!-- ⭐ HERO SLIDER (dashboard/mockup alanı) -->
-    <div class="hero-slider" id="heroSlider">
-      <button class="hs-btn prev" id="hsPrev" type="button" aria-label="Önceki">‹</button>
-      <button class="hs-btn next" id="hsNext" type="button" aria-label="Sonraki">›</button>
+    <!-- 🎬 HERO VIDEO -->
+<div class="hero-video">
 
-      <div class="hs-viewport">
-        <div class="hs-track" id="hsTrack">
-          <img src="/static/hero.png" alt="CashGuard örnek ekran 1" loading="lazy">
-          <img src="/static/hero-2.png" alt="CashGuard örnek ekran 2" loading="lazy">
-          <img src="/static/hero-3.png" alt="CashGuard örnek ekran 3" loading="lazy">
-          <img src="/static/hero-4.png" alt="CashGuard örnek ekran 4" loading="lazy">
-          <img src="/static/hero-5.png" alt="CashGuard örnek ekran 5" loading="lazy">
-          <img src="/static/hero-6.png" alt="CashGuard örnek ekran 6" loading="lazy">
-        </div>
-      </div>
+  <video
+    class="hero-video-el"
+    autoplay
+    muted
+    loop
+    playsinline
+    preload="auto"
+  >
+    <source src="/static/hero-video.mp4" type="video/mp4">
+  </video>
 
-      <div class="hs-dots" id="hsDots" aria-label="Görsel seçimi"></div>
-    </div>
+</div>
 
     <!-- 🎯 Primary CTA -->
     <div class="hero-cta">
