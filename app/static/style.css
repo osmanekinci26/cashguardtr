@@ -1055,6 +1055,181 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   .hero-video{ margin: 12px 0 14px 0; }
   .hero-mid{ gap: 12px !important; margin-bottom: 14px; }
 }
+/* =========================================================
+   FINAL PATCH (v2002.1) — mobile header + badges + sticky CTA
+   Bu blok dosyanın EN SONUNDA olmalı
+   ========================================================= */
+
+/* ---------- Sticky CTA: her zaman kayarak gelsin (fixed) ---------- */
+.sticky-cta{
+  position: fixed !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  bottom: 16px !important;
+
+  width: calc(100% - 24px) !important;
+  max-width: 980px !important;
+
+  z-index: 9999 !important;
+}
+
+/* Container altına çakışmasın diye sayfaya alt padding */
+.container{
+  padding-bottom: 84px; /* sticky-cta payı */
+}
+
+/* ---------- Hero video: sayfaya sığsın, taşmasın ---------- */
+.hero-video{
+  width: 100% !important;
+  border-radius: 18px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(15,23,42,.08) !important;
+  background: #000 !important;
+}
+
+/* Hem .hero-video-el hem .hero-video video için ortak kural */
+.hero-video-el,
+.hero-video video{
+  width: 100% !important;
+  height: 420px !important;
+  object-fit: cover !important;     /* modern görünüm; taşma yok */
+  object-position: center !important;
+  display: block !important;
+}
+
+@media (max-width:700px){
+  .hero-video-el,
+  .hero-video video{
+    height: 260px !important;
+  }
+}
+
+/* ---------- Hero: örnek görsel + ücretsiz kutu eşit boy ---------- */
+.hero-free-row{
+  display: flex !important;
+  gap: 14px !important;
+  align-items: stretch !important;
+}
+
+.hero-sample,
+.hero-free-row .free-box{
+  flex: 1 1 0 !important;
+  min-height: 260px !important;     /* ikisine aynı taban yükseklik */
+}
+
+.hero-sample{
+  background:#fff !important;
+  border-radius:18px !important;
+  border:1px solid rgba(15,23,42,.08) !important;
+  padding:16px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
+
+.hero-sample img{
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 260px !important;
+  object-fit: contain !important;   /* BOZULMAZ */
+  display:block !important;
+}
+
+.hero-free-row .free-box{
+  margin-top:0 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:center !important;
+}
+
+@media (max-width:700px){
+  .hero-free-row{
+    flex-direction: column !important;
+  }
+  .hero-sample,
+  .hero-free-row .free-box{
+    min-height: auto !important;
+  }
+  .hero-sample img{
+    max-height: 220px !important;
+  }
+}
+
+/* ---------- Mobile header: linkler okunur + 2 kolon chip ---------- */
+@media (max-width:700px){
+  .header{
+    background: rgba(255,255,255,.92) !important; /* açık tema, okunur */
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  .header-inner{
+    padding: 10px 12px !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+
+  .brand{
+    flex: 1 1 100% !important;
+  }
+
+  .brand-link{
+    color: var(--text) !important;
+  }
+
+  .navlinks{
+    margin-left: 0 !important;
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .navlinks a{
+    display:block !important;
+    text-align:center !important;
+    padding: 10px 10px !important;
+    border-radius: 12px !important;
+
+    background: rgba(37,99,235,.08) !important;
+    border: 1px solid rgba(37,99,235,.18) !important;
+
+    color: var(--text) !important;          /* ✅ saydamlık bitti */
+    font-weight: 800 !important;
+    line-height: 1.05 !important;
+  }
+
+  .navlinks a:hover{
+    background: rgba(37,99,235,.12) !important;
+    color: var(--primary) !important;
+  }
+}
+
+/* ---------- Hero badges: mobilde 2 kolon (3’ü de yan yana hissi) ---------- */
+@media (max-width:700px){
+  .hero-badges{
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .hero-badges .hb{
+    width: 100% !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+
+    padding: 8px 10px !important;
+    border-radius: 999px !important;
+    font-weight: 900 !important;
+    font-size: 12px !important;
+
+    white-space: nowrap !important;
+    background: rgba(8,145,178,.10) !important;
+    border: 1px solid rgba(8,145,178,.22) !important;
+    color: var(--text) !important;
+  }
+}
 
 
 
