@@ -1,7 +1,6 @@
-/* CASHGUARDTR THEME v2002 */
+/* CASHGUARDTR THEME v2003 (clean + mobile polished) */
 
 :root{
-  /* Ana zeminler */
   --bg:#F8FAFC;
   --card:#FFFFFF;
   --text:#0F172A;
@@ -9,11 +8,10 @@
   --border:#E2E8F0;
   --shadow:0 12px 40px rgba(15,23,42,.08);
 
-  /* Marka renkleri (premium fintech) */
-  --primary:#2563EB;     /* güven mavisi */
+  --primary:#2563EB;
   --primary-soft:#DBEAFE;
-  --success:#10B981;     /* nakit / pozitif */
-  --accent:#0EA5E9;      /* teknoloji hissi */
+  --success:#10B981;
+  --accent:#0EA5E9;
 
   --radius:18px;
 }
@@ -25,19 +23,17 @@ body{
   font-family: Inter, Arial, sans-serif;
   min-height:100vh;
   color:var(--text);
-
-  /* Premium açık gradient */
   background:
     radial-gradient(900px 500px at 0% 10%, #E0F2FE 0%, transparent 60%),
     radial-gradient(900px 500px at 100% 0%, #DBEAFE 0%, transparent 60%),
     var(--bg);
 }
 
-/* Orta alan beyaz panel gibi */
+/* Orta alan panel */
 .container{
   max-width:980px;
   margin:28px auto;
-  padding:28px 18px;
+  padding:28px 18px 96px 18px; /* ✅ sticky CTA için alt boşluk */
   background: rgba(255,255,255,.75);
   backdrop-filter: blur(12px);
   border: 1px solid var(--border);
@@ -53,8 +49,12 @@ body{
   box-shadow:0 8px 30px rgba(15,23,42,.06);
 }
 
+/* kart içi akış boşlukları */
+.card > *{ margin-top:22px; }
+.card > *:first-child{ margin-top:0; }
+
 h1,h2,h3{margin:0 0 10px 0; color: var(--text);}
-p{margin:0 0 10px 0;color:var(--muted)}
+p{margin:0 0 10px 0; color:var(--muted)}
 
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:700px){.grid{grid-template-columns:1fr}}
@@ -68,7 +68,7 @@ input,select,textarea{
   border:1px solid var(--border);
   background: rgba(15,23,42,.03);
   color: var(--text);
-  font-size:16px; /* mobile zoom fix */
+  font-size:16px;
   line-height:1.2;
 }
 input::placeholder{ color: rgba(15,23,42,.45); }
@@ -88,7 +88,6 @@ input::placeholder{ color: rgba(15,23,42,.45); }
   box-shadow:0 10px 22px rgba(37,99,235,.25);
   transition:.2s;
 }
-
 .btn:hover{
   transform: translateY(-1px);
   box-shadow:0 14px 26px rgba(37,99,235,.30);
@@ -116,23 +115,20 @@ input::placeholder{ color: rgba(15,23,42,.45); }
 hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
 /* =========================
-   Header (premium light glass)
+   Header (premium glass)
    ========================= */
 .header{
   position: sticky;
   top: 0;
   z-index: 1000;
-
-  /* siyah yerine açık "glass" */
   background: rgba(255,255,255,.82);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-
   border-bottom: 1px solid var(--border);
 }
 
 .header-inner{
-  max-width: 980px;              /* container ile uyumlu (istersen 900 bırak) */
+  max-width: 980px;
   margin: 0 auto;
   padding: 12px 16px;
   display:flex;
@@ -141,48 +137,75 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 }
 
 .brand{ font-weight:900; letter-spacing:.3px; }
-
 .brand-link{
   text-decoration:none;
-  color: var(--text);            /* artık koyu metin */
+  color: var(--text);
   display:flex;
   align-items:center;
   gap:10px;
 }
-
 .brand-text{ display:inline-block; }
 
 .navlinks{
-  margin-left:auto;              /* sağa yas */
+  margin-left:auto;
   display:flex;
   gap:14px;
   flex-wrap:wrap;
   justify-content:flex-end;
 }
-
 .navlinks a{
-  color: var(--muted);           /* açık tema link rengi */
+  color: var(--muted);
   font-weight:700;
   text-decoration:none;
-  padding: 6px 8px;              /* premium hissi: hover alanı */
+  padding: 6px 8px;
   border-radius: 10px;
   transition: .15s;
 }
-
 .navlinks a:hover{
-  color: var(--primary);         /* hover’da marka mavisi */
+  color: var(--primary);
   background: rgba(37,99,235,.08);
 }
 
 /* =========================
-   Landing hero
+   Landing hero basics
    ========================= */
 .hero { padding: 8px 0 6px 0; }
 .hero h1 { font-size: 30px; line-height: 1.2; }
 .hero .sub { font-size: 14px; }
+.sub2{ opacity:.9; }
 
-.hero-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px; }
+.hero-card{ position: relative; }
 
+.hero-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+}
+
+/* Badges */
+.hero-badges{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.hb{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:6px 10px;
+  border-radius:999px;
+  font-weight:900;
+  background: rgba(8,145,178,.10);
+  border: 1px solid rgba(8,145,178,.22);
+  color: var(--text);
+  font-size:12px;
+  white-space: nowrap;
+}
+
+/* Free box */
 .free-box{
   margin-top: 12px;
   padding: 14px;
@@ -203,8 +226,100 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .free-list{ margin: 8px 0 0 18px; color: var(--text); }
 .free-list li{ margin: 6px 0; }
 
+/* Trust line */
+.hero-trustline{
+  margin-top:10px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  color: rgba(15,23,42,.70);
+  font-size:12px;
+  font-weight:700;
+}
+
 /* =========================
-   Tooltip (i) — hover ile açılır
+   Hero video
+   Desktop: cover (premium)
+   Mobile: contain (NO CROP)
+   ========================= */
+.hero-video{
+  margin-top:16px;
+  border-radius:18px;
+  overflow:hidden;
+  border:1px solid rgba(15,23,42,.08);
+  background:#000; /* contain’de boşluk kalırsa siyah */
+  width:100%;
+  box-shadow:0 20px 50px rgba(15,23,42,.12);
+}
+
+.hero-video-el,
+.hero-video video{
+  width:100%;
+  height:420px;
+  object-fit: cover;
+  object-position:center;
+  display:block;
+}
+
+@media (max-width:700px){
+  .hero-video-el,
+  .hero-video video{
+    height:260px;
+    object-fit: contain; /* ✅ yazılar kesilmez */
+    background:#000;
+  }
+}
+
+/* =========================
+   Hero sample + free box equal height
+   ========================= */
+.hero-free-row{
+  display:flex;
+  gap:14px;
+  align-items:stretch;
+}
+
+/* iki kolon eşit */
+.hero-sample,
+.hero-free-row .free-box{
+  flex:1 1 0;
+}
+
+/* sample kutusu */
+.hero-sample{
+  background:#fff;
+  border-radius:18px;
+  border:1px solid rgba(15,23,42,.08);
+  padding:16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* görsel bozulmadan */
+.hero-sample img{
+  width:100%;
+  height:100%;
+  max-height:260px;
+  object-fit:contain;
+  display:block;
+}
+
+/* free box aynı yükseklikte dolsun */
+.hero-free-row .free-box{
+  margin-top:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+@media (max-width:700px){
+  .hero-free-row{ flex-direction:column; }
+  .hero-sample img{ max-height:220px; }
+}
+
+/* =========================
+   Tooltip (i)
    ========================= */
 .label-row{display:flex; align-items:center; gap:8px;}
 .info{
@@ -276,14 +391,14 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .sector-arrow{ font-size:18px; font-weight:900; color: rgba(15,23,42,.55); }
 .sector-form{ margin:0; display:flex; align-items:center; }
 .sector-select{
-  width:auto;              /* ✅ tüm sayfayı kaplamasın */
+  width:auto;
   min-width: 220px;
   max-width: 260px;
   font-weight:600;
 }
 
 /* =========================
-   WhatsApp widget (icon-only)
+   WhatsApp widget
    ========================= */
 .wa-widget{ position: fixed; right: 18px; bottom: 18px; z-index: 9999; }
 .wa-fab{
@@ -353,9 +468,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .wa-note{ font-size: 12px; opacity:.75; margin-top: 10px; color: var(--muted); }
 
 /* =========================
-   HERO SLIDER (NO DISTORT + FULL WIDTH FEEL + NO PEEK)
+   Slider (kept)
    ========================= */
-
 .hero-slider{
   margin-top: 14px;
   position: relative;
@@ -363,10 +477,8 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   border: 1px solid rgba(15,23,42,.08);
   background: rgba(255,255,255,.80);
   overflow: hidden;
-  padding: 12px 44px; /* oklar için boşluk */
+  padding: 12px 44px;
 }
-
-/* Scroll-snap viewport */
 .hs-viewport{
   width: 100%;
   overflow-x: auto;
@@ -374,57 +486,48 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* firefox */
+  scrollbar-width: none;
 }
-.hs-viewport::-webkit-scrollbar{ display:none; } /* chrome */
-
-/* Track */
+.hs-viewport::-webkit-scrollbar{ display:none; }
 .hs-track{
   display: flex;
-  gap: 0;              /* ✅ “peek” sorunu bitiyor */
+  gap: 0;
   width: 100%;
+  align-items:center;
 }
-
-/* Her slide %100 genişlik */
 .hs-slide{
   flex: 0 0 100%;
   width: 100%;
   scroll-snap-align: start;
   position: relative;
-  height: 340px;       /* slider biraz büyük */
+  height: 340px;
   border-radius: 14px;
   overflow: hidden;
   background: #fff;
   border: 1px solid rgba(15,23,42,.06);
 }
-
-/* Arka plan: yayılma hissi (blur) */
 .hs-slide::before{
   content:"";
   position:absolute;
   inset:0;
   background-image: var(--bg);
-  background-size: cover;       /* ✅ sağa-sola yayılır */
+  background-size: cover;
   background-position: center;
   filter: blur(18px);
   transform: scale(1.12);
   opacity: .55;
 }
-
-/* Ön plan: bozulmadan sığdır (contain) */
 .hs-slide img{
   position:absolute;
   inset:0;
   width: 100%;
   height: 100%;
-  object-fit: contain;           /* ✅ bozulmaz */
-  object-position: center;       /* ✅ ortalı */
+  object-fit: contain;
+  object-position: center;
   display:block;
-  padding: 10px 14px;            /* ✅ kenar nefesi */
+  padding: 10px 14px;
   box-sizing: border-box;
 }
-
-/* oklar */
 .hs-btn{
   position: absolute;
   top: 50%;
@@ -446,7 +549,6 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .hs-btn.next{ right: 10px; }
 .hs-btn:hover{ background: #fff; }
 
-/* dots */
 .hs-dots{
   display: flex;
   gap: 8px;
@@ -461,9 +563,7 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   background: rgba(15,23,42,.10);
   cursor: pointer;
 }
-.hs-dot.active{
-  background: rgba(15,23,42,.55);
-}
+.hs-dot.active{ background: rgba(15,23,42,.55); }
 
 @media (max-width:700px){
   .hero-slider{ padding: 10px 40px; }
@@ -471,210 +571,27 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
   .hs-slide img{ padding: 8px 10px; }
 }
 
-/* ===== FIX PATCH (v2002) ===== */
-
-/* Mobil layout kuralların kaybolmuş — geri ekleyelim */
-@media (max-width:700px){
-  .container{ padding:18px 12px; margin:12px auto; border-radius:18px; }
-  h1{ font-size:26px; }
-  h2{ font-size:18px; }
-  p{ font-size:14px; }
-
-  .grid{ grid-template-columns:1fr; }
-
-  .actions{ flex-direction:column; align-items:stretch; }
-  .btn{ width:100%; text-align:center; padding:12px 14px; }
-
-  /* check sayfasında select taşmasın */
-  .sector-select{ min-width:170px; max-width:220px; }
-}
-
-/* Slider: taşmayı kesin bitir */
-.hs-track{
-  align-items: center;
-}
-
-.hs-track img{
-  min-width: 100%;     /* ✅ bazı durumlarda taşmayı bitirir */
-}
 /* =========================
-   HOME (WOW + FLOW + TRUST)
+   Sticky CTA (real floating)
    ========================= */
+.sticky-cta{
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%) translateY(120%);
+  opacity: 0;
+  pointer-events: none;
 
-.hero-card{ position: relative; }
+  width: calc(100% - 24px);
+  max-width: 980px;
 
-.hero-top{
   display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:16px;
-  flex-wrap:wrap;
-}
-
-.hero-badges{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  margin-bottom:10px;
-}
-
-.hb{
-  display:inline-block;
-  padding:6px 10px;
-  border-radius:999px;
-  font-weight:900;
-  background: rgba(8,145,178,.10);
-  border: 1px solid rgba(8,145,178,.22);
-  color: var(--text);
-  font-size:12px;
-}
-
-.sub2{ opacity:.9; }
-
-.hero-mini{
-  min-width: 220px;
-  max-width: 260px;
-  border: 1px solid rgba(15,23,42,.08);
-  border-radius: 16px;
-  padding: 12px;
-  background: rgba(15,23,42,.02);
-}
-
-.mini-title{ font-weight:900; margin-bottom:8px; }
-.mini-note{ font-size:12px; color: rgba(15,23,42,.70); margin-top:8px; }
-
-.riskbar{
-  position: relative;
-  display:flex;
-  height: 10px;
-  border-radius: 999px;
-  overflow:hidden;
-  border: 1px solid rgba(15,23,42,.10);
-  background: #fff;
-}
-.riskbar span{ display:block; height:100%; }
-.riskbar .g{ width:33.33%; background: rgba(34,197,94,.35); }
-.riskbar .y{ width:33.33%; background: rgba(250,204,21,.40); }
-.riskbar .r{ width:33.33%; background: rgba(239,68,68,.35); }
-.riskbar .marker{
-  position:absolute;
-  top:-4px;
-  width:2px;
-  height:18px;
-  background: rgba(15,23,42,.75);
-}
-
-.hero-trustline{
-  margin-top:10px;
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  color: rgba(15,23,42,.70);
-  font-size:12px;
-  font-weight:700;
-}
-
-/* two col layout */
-.two-col{
-  display:grid;
-  grid-template-columns: 1.2fr .8fr;
-  gap:14px;
-}
-@media (max-width:700px){
-  .two-col{ grid-template-columns: 1fr; }
-  .hero-mini{ min-width: 0; max-width: 100%; }
-}
-
-/* Timeline */
-.timeline{
-  margin-top:10px;
-  display:grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap:12px;
-}
-@media (max-width:700px){
-  .timeline{ grid-template-columns: 1fr; }
-}
-.step{
-  display:flex;
-  gap:10px;
-  align-items:flex-start;
-  padding: 12px;
-  border: 1px solid rgba(15,23,42,.08);
-  border-radius: 16px;
-  background: rgba(15,23,42,.02);
-}
-.step .icon{
-  width:38px; height:38px;
-  border-radius: 14px;
-  display:flex;
+  flex-direction:column;
   align-items:center;
   justify-content:center;
-  background: rgba(124,58,237,.10);
-  border: 1px solid rgba(124,58,237,.18);
-}
-.step .icon svg{ width:20px; height:20px; fill: rgba(15,23,42,.80); }
-.step-title{ font-weight:900; margin-bottom:4px; }
-.step-text{ color: rgba(15,23,42,.70); font-size:13px; }
 
-/* Persona */
-.persona-grid{
-  display:grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap:12px;
-}
-@media (max-width:700px){
-  .persona-grid{ grid-template-columns:1fr; }
-}
-.persona{
-  padding: 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(15,23,42,.08);
-  background: rgba(255,255,255,.65);
-}
-.p-title{ font-weight:900; margin-bottom:6px; }
-.p-text{ color: rgba(15,23,42,.70); font-size:13px; margin-bottom:10px; }
-.p-badge{
-  display:inline-block;
-  padding:6px 10px;
-  border-radius:999px;
-  font-weight:900;
-  background: rgba(22,163,74,.10);
-  border: 1px solid rgba(22,163,74,.18);
-}
-
-/* Testimonials */
-.testimonials{
-  display:grid;
-  gap:10px;
-}
-.t-card{
-  padding: 14px;
-  border-radius: 16px;
-  border: 1px solid rgba(15,23,42,.08);
-  background: rgba(255,255,255,.70);
-}
-.t-quote{ font-weight:800; color: rgba(15,23,42,.85); }
-.t-meta{ margin-top:8px; font-size:12px; color: rgba(15,23,42,.65); }
-
-/* =========================
-   STICKY CTA (scroll ile kayan)
-   ========================= */
-
-.sticky-cta{
-  position: sticky;      /* ❗ fixed değil */
-  bottom: 16px;          /* ekran altına yapışır */
-  margin: 22px auto 0 auto;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  max-width: 900px;
   padding: 14px 16px;
   border-radius: 16px;
-
   background: linear-gradient(90deg,#7c3aed,#4f46e5);
   color:#fff;
   text-decoration:none;
@@ -682,603 +599,75 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 
   box-shadow: 0 18px 40px rgba(79,70,229,.35);
   border:1px solid rgba(255,255,255,.15);
+  z-index: 99999;
 
-  z-index: 50;
+  transition: transform .25s ease, opacity .25s ease;
 }
-
 .sticky-cta:hover{
-  transform: translateY(-2px);
+  transform: translateX(-50%) translateY(0) translateY(-2px);
   box-shadow: 0 22px 50px rgba(79,70,229,.45);
 }
-
-.s-title{
-  font-size:16px;
+.sticky-cta.is-visible{
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
 }
-
-.s-sub{
-  font-size:12px;
-  opacity:.85;
-}
+.s-title{ font-size:16px; }
+.s-sub{ font-size:12px; opacity:.85; }
 
 /* =========================
-   HERO VIDEO (fit)
-   ========================= */
-
-.hero-video{
-  margin-top:16px;
-  border-radius:18px;
-  overflow:hidden;
-  border:1px solid rgba(15,23,42,.08);
-  background:#000;                 /* boşluk olursa siyah */
-  max-width: 100%;
-}
-
-.hero-video-el{
-  width:100%;
-  height: 320px;                   /* ✅ daha küçük */
-  object-fit: contain;             /* ✅ kırpmaz, tam sığdırır */
-  object-position: center;         /* ortalar */
-  display:block;
-}
-
-/* mobil */
-@media (max-width:700px){
-  .hero-video-el{
-    height: 220px;
-  }
-}
-/* ================================
-   GLOBAL SPACING IMPROVEMENT
-================================ */
-
-.hero-title{ 
-  font-size:32px; 
-  margin-bottom:10px;
-}
-
-.hero-subtitle{
-  font-size:22px;
-  color:#0f172a;
-  margin-bottom:8px;
-}
-
-.hero-desc{
-  font-size:16px;
-  margin-bottom:24px;
-}
-
-/* her blok arası boşluk */
-.card > *{
-  margin-top:22px;
-}
-.card > *:first-child{
-  margin-top:0;
-}
-
-/* ================================
-   HERO VIDEO (FINAL SIZE)
-================================ */
-
-.hero-video{
-  width:100%;
-  border-radius:18px;
-  overflow:hidden;
-  border:1px solid rgba(15,23,42,.08);
-  box-shadow:0 20px 50px rgba(15,23,42,.12);
-}
-
-.hero-video video{
-  width:100%;
-  height:420px;       /* masaüstü boyut */
-  object-fit:cover;
-  display:block;
-}
-
-/* mobil */
-@media (max-width:700px){
-  .hero-video video{
-    height:260px;
-  }
-}
-
-/* ücretsiz kutu spacing */
-.free-box{
-  margin-top:28px;
-}
-
-/* CTA spacing */
-.hero-cta{
-  margin-top:28px;
-}
-/* ===== PAGE HERO IMAGE ===== */
-
-.page-hero-img{
-  max-width:1100px;
-  margin:20px auto 10px auto;
-  padding:0 18px;
-}
-
-.page-hero-img img{
-  width:100%;
-  height:420px;           /* ana sayfa video yüksekliği ile aynı */
-  object-fit:cover;
-  border-radius:18px;
-  box-shadow:0 18px 40px rgba(0,0,0,.18);
-}
-/* ===== ABOUT PAGE LOGO GRID ===== */
-
-.about-grid{
-  align-items:center;
-  gap:30px;
-}
-
-.about-logo-wrap{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-}
-
-.about-logo-wrap img{
-  width:100%;
-  max-width:260px;
-  opacity:.95;
-  filter: drop-shadow(0 10px 25px rgba(0,0,0,.15));
-}
-/* =========================
-   PAGE HERO IMAGE (video ile aynı ölçü)
-   ========================= */
-
-.page-hero{
-  margin: 14px 0 18px 0;
-  border-radius: 18px;
-  overflow: hidden;
-  border: 1px solid rgba(15,23,42,.08);
-  background: #fff;
-}
-
-.page-hero img{
-  width: 100%;
-  height: 300px;        /* video ile birebir */
-  object-fit: cover;    /* taşmadan doldurur */
-  display: block;
-}
-@media (max-width:700px){
-  .page-hero img{ height:220px; }
-}
-/* =========================
-   ABOUT HERO (logo + text)
-   ========================= */
-
-.about-hero{
-  display:grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 28px;
-  align-items:center;
-}
-
-.about-logo{
-  text-align:center;
-}
-
-.about-logo img{
-  max-width: 260px;
-  width: 100%;
-  height: auto;
-  opacity:.95;
-}
-@media (max-width:700px){
-  .about-hero{
-    grid-template-columns:1fr;
-    text-align:center;
-  }
-}
-/* =========================
-   HERO SAMPLE + FREE BOX
-   ========================= */
-
-.hero-free-row{
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;               /* az boşluk */
-  margin-top: 18px;
-  align-items: stretch;
-}
-
-/* Görsel kart gibi */
-.hero-sample{
-  border-radius: 16px;
-  overflow: hidden;
-  border: 1px solid rgba(15,23,42,.08);
-  background:#fff;
-  display:flex;
-}
-
-.hero-sample img{
-  width:100%;
-  height:100%;
-  object-fit: cover;       /* bozulmaz */
-  display:block;
-}
-
-/* Free box aynı yükseklik */
-.hero-free-row .free-box{
-  margin-top:0;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-}
-
-/* Mobil */
-@media (max-width:700px){
-  .hero-free-row{
-    grid-template-columns:1fr;
-  }
-}
-/* Hero sağ blok: görsel */
-.hero-mini.hero-mini-img{
-  width: 100%;
-  max-width: 360px;        /* free-box ile benzer görünüm */
-  border: 1px solid rgba(15,23,42,.10);
-  border-radius: 16px;
-  background: #fff;
-  padding: 10px;
-}
-
-.hero-mini.hero-mini-img img{
-  width: 100%;
-  height: 100%;
-  max-height: 180px;       /* taşmasın */
-  object-fit: contain;     /* bozulmadan sığsın */
-  display: block;
-}
-
-/* Hero üst satır hizalama + küçük boşluk */
-.hero-top{
-  display:flex;
-  gap: 12px;               /* aralarında az boşluk */
-  align-items: stretch;
-  justify-content: space-between;
-  flex-wrap: wrap;
-}
-
-@media (max-width:700px){
-  .hero-mini.hero-mini-img{ max-width: 100%; }
-  .hero-mini.hero-mini-img img{ max-height: 220px; }
-}
-/* HERO MID – örnek çıktı + ücretsiz kutu aynı boy */
-.hero-free-row{
-  display:flex;
-  gap:14px;
-  align-items:stretch;
-}
-
-/* iki kolon eşit genişlik */
-.hero-sample,
-.hero-free-row .free-box{
-  flex:1;
-}
-
-/* görsel kutusu */
-.hero-sample{
-  background:#fff;
-  border-radius:18px;
-  border:1px solid rgba(15,23,42,.08);
-  padding:16px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
-/* görsel gerçek boyutlandırma */
-.hero-sample img{
-  width:100%;
-  height:100%;
-  max-height:260px;     /* ⭐ free-box ile eşit yüksekliği verir */
-  object-fit:contain;   /* BOZULMAZ */
-  display:block;
-}
-
-/* ücretsiz kutu artık aynı yükseklik */
-.hero-free-row .free-box{
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-}
-/* =========================
-   MOBILE POLISH (Header + Badges)
+   Mobile polish (header + badges)
    ========================= */
 @media (max-width:700px){
+  .container{ padding:16px 12px 96px 12px; margin:12px auto; border-radius:18px; }
+  h1{ font-size:26px; }
+  h2{ font-size:18px; }
+  p{ font-size:14px; }
 
-  /* Container biraz daha nefes alsın */
-  .container{ padding:16px 12px; }
+  .actions{ flex-direction:column; align-items:stretch; }
+  .btn{ width:100%; text-align:center; padding:12px 14px; }
+  .sector-select{ min-width:170px; max-width:220px; }
 
-  /* HEADER: linkleri 2 sütun yap (chip gibi) */
+  /* Header linkleri: 2 kolon chip + OKUNUR */
+  .header{ background: rgba(255,255,255,.92); }
   .header-inner{
     padding: 10px 12px;
-    flex-wrap: wrap;        /* satır kırılabilir */
+    flex-wrap: wrap;
     gap: 10px;
   }
-
-  .brand{
-    flex: 1 1 100%;         /* CashGuard tek satırda */
-  }
+  .brand{ flex: 1 1 100%; }
 
   .navlinks{
     margin-left: 0;
     width: 100%;
-    display: grid;          /* ✅ 2 sütun */
+    display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
-    justify-content: stretch;
   }
-
   .navlinks a{
     display:block;
     text-align:center;
     padding: 10px 10px;
     border-radius: 12px;
-    background: rgba(255,255,255,.10);
-    border: 1px solid rgba(255,255,255,.14);
-    color: rgba(255,255,255,.92);
+    background: rgba(37,99,235,.08);
+    border: 1px solid rgba(37,99,235,.18);
+    color: var(--text);
     font-weight: 800;
     line-height: 1.05;
   }
-
-  .navlinks a:hover{ background: rgba(255,255,255,.16); }
-
-  /* HERO BADGES: yan yana + wrap, sıkışmasın */
-  .hero-badges{
-    display:flex;
-    flex-wrap: wrap;        /* ✅ sığmazsa alt satıra */
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
-  .hero-badges .hb{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    padding: 8px 10px;
-    border-radius: 999px;
-    font-weight: 900;
-    font-size: 12px;
-    white-space: nowrap;    /* rozet tek parça kalsın */
-    background: rgba(15,23,42,.06);
-    border: 1px solid rgba(15,23,42,.10);
-  }
-
-  /* Hero başlık/sub biraz nefes */
-  .hero h1{ font-size: 24px; line-height:1.2; margin-bottom:10px; }
-  .hero .sub{ font-size: 14px; }
-
-  /* Video + kutular arası boşluk */
-  .hero-video{ margin: 12px 0 14px 0; }
-  .hero-mid{ gap: 12px !important; margin-bottom: 14px; }
-}
-/* =========================================================
-   FINAL PATCH (v2002.1) — mobile header + badges + sticky CTA
-   Bu blok dosyanın EN SONUNDA olmalı
-   ========================================================= */
-
-/* ---------- Sticky CTA: her zaman kayarak gelsin (fixed) ---------- */
-.sticky-cta{
-  position: fixed !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  bottom: 16px !important;
-
-  width: calc(100% - 24px) !important;
-  max-width: 980px !important;
-
-  z-index: 9999 !important;
-}
-
-/* Container altına çakışmasın diye sayfaya alt padding */
-.container{
-  padding-bottom: 84px; /* sticky-cta payı */
-}
-
-/* ---------- Hero video: sayfaya sığsın, taşmasın ---------- */
-.hero-video{
-  width: 100% !important;
-  border-radius: 18px !important;
-  overflow: hidden !important;
-  border: 1px solid rgba(15,23,42,.08) !important;
-  background: #000 !important;
-}
-
-/* Hem .hero-video-el hem .hero-video video için ortak kural */
-.hero-video-el,
-.hero-video video{
-  width: 100% !important;
-  height: 420px !important;
-  object-fit: cover !important;     /* modern görünüm; taşma yok */
-  object-position: center !important;
-  display: block !important;
-}
-
-@media (max-width:700px){
-  .hero-video-el,
-  .hero-video video{
-    height: 260px !important;
-  }
-}
-
-/* ---------- Hero: örnek görsel + ücretsiz kutu eşit boy ---------- */
-.hero-free-row{
-  display: flex !important;
-  gap: 14px !important;
-  align-items: stretch !important;
-}
-
-.hero-sample,
-.hero-free-row .free-box{
-  flex: 1 1 0 !important;
-  min-height: 260px !important;     /* ikisine aynı taban yükseklik */
-}
-
-.hero-sample{
-  background:#fff !important;
-  border-radius:18px !important;
-  border:1px solid rgba(15,23,42,.08) !important;
-  padding:16px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-}
-
-.hero-sample img{
-  width: 100% !important;
-  height: 100% !important;
-  max-height: 260px !important;
-  object-fit: contain !important;   /* BOZULMAZ */
-  display:block !important;
-}
-
-.hero-free-row .free-box{
-  margin-top:0 !important;
-  display:flex !important;
-  flex-direction:column !important;
-  justify-content:center !important;
-}
-
-@media (max-width:700px){
-  .hero-free-row{
-    flex-direction: column !important;
-  }
-  .hero-sample,
-  .hero-free-row .free-box{
-    min-height: auto !important;
-  }
-  .hero-sample img{
-    max-height: 220px !important;
-  }
-}
-
-/* ---------- Mobile header: linkler okunur + 2 kolon chip ---------- */
-@media (max-width:700px){
-  .header{
-    background: rgba(255,255,255,.92) !important; /* açık tema, okunur */
-    border-bottom: 1px solid var(--border) !important;
-  }
-
-  .header-inner{
-    padding: 10px 12px !important;
-    flex-wrap: wrap !important;
-    gap: 10px !important;
-  }
-
-  .brand{
-    flex: 1 1 100% !important;
-  }
-
-  .brand-link{
-    color: var(--text) !important;
-  }
-
-  .navlinks{
-    margin-left: 0 !important;
-    width: 100% !important;
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 8px !important;
-  }
-
-  .navlinks a{
-    display:block !important;
-    text-align:center !important;
-    padding: 10px 10px !important;
-    border-radius: 12px !important;
-
-    background: rgba(37,99,235,.08) !important;
-    border: 1px solid rgba(37,99,235,.18) !important;
-
-    color: var(--text) !important;          /* ✅ saydamlık bitti */
-    font-weight: 800 !important;
-    line-height: 1.05 !important;
-  }
-
   .navlinks a:hover{
-    background: rgba(37,99,235,.12) !important;
-    color: var(--primary) !important;
+    background: rgba(37,99,235,.12);
+    color: var(--primary);
   }
-}
 
-/* ---------- Hero badges: mobilde 2 kolon (3’ü de yan yana hissi) ---------- */
-@media (max-width:700px){
+  /* Hero badges: 2 kolon (3 rozet daha “yan yana” hissi) */
   .hero-badges{
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 8px !important;
-    margin-bottom: 10px !important;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:8px;
   }
-
   .hero-badges .hb{
-    width: 100% !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-
-    padding: 8px 10px !important;
-    border-radius: 999px !important;
-    font-weight: 900 !important;
-    font-size: 12px !important;
-
-    white-space: nowrap !important;
-    background: rgba(8,145,178,.10) !important;
-    border: 1px solid rgba(8,145,178,.22) !important;
-    color: var(--text) !important;
+    width:100%;
+    padding:8px 10px;
   }
 }
-/* ===== Sticky CTA: gerçek fixed + scroll’da görünür ===== */
-.sticky-cta{
-  position: fixed !important;
-  left: 50% !important;
-  bottom: 16px !important;
-  transform: translateX(-50%) translateY(120%) !important; /* başlangıçta aşağıda gizli */
-  opacity: 0 !important;
-  pointer-events: none !important;
-
-  width: calc(100% - 24px) !important;
-  max-width: 980px !important;
-  z-index: 99999 !important;
-
-  transition: transform .25s ease, opacity .25s ease !important;
-}
-
-/* görünür hali */
-.sticky-cta.is-visible{
-  transform: translateX(-50%) translateY(0) !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
-}
-
-/* alttan çakışmayı önle */
-.container{ padding-bottom: 96px !important; }
-/* ===== HERO VIDEO – MOBILE: NO CROP (override) ===== */
-.hero-video{ background:#000; } /* contain'de boşluk kalırsa siyah dursun */
-
-.hero-video video,
-.hero-video-el{
-  width:100%;
-  height:100%;
-  display:block;
-}
-
-/* Masaüstü: istersen cover kalsın */
-.hero-video video{
-  height:420px;
-  object-fit: cover;
-}
-
-/* Mobil: kesinlikle kırpma yok */
-@media (max-width:700px){
-  .hero-video video{
-    height:260px;          /* kutu boyutu iyi demiştin, aynı kalsın */
-    object-fit: contain;   /* ✅ yazılar kesilmez */
-    object-position:center;
-  }
-}
-
-
-

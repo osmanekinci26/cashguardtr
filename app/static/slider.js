@@ -93,3 +93,15 @@
   // init
   go(0);
 })();
+// Sticky CTA show/hide on scroll (safe on all pages)
+(function(){
+  const cta = document.querySelector('.sticky-cta');
+  if(!cta) return;
+
+  function onScroll(){
+    const y = window.scrollY || document.documentElement.scrollTop || 0;
+    cta.classList.toggle('is-visible', y > 200);
+  }
+  window.addEventListener('scroll', onScroll, { passive:true });
+  onScroll();
+})();
