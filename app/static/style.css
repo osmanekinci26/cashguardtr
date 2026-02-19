@@ -739,3 +739,48 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .container{
   padding-bottom: 110px !important;
 }
+/* =========================================================
+   PATCH v2002.3 — "Nasıl çalışır" görselleri büyümesin
+   (style.css EN SON)
+   ========================================================= */
+
+/* How/Timeline içindeki görselleri kontrol altına al */
+.timeline img,
+.step img,
+.step .icon img{
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 42px !important;   /* ikon boyutu */
+  object-fit: contain !important;
+  display: inline-block !important;
+}
+
+/* Eğer "Nasıl çalışır" kısmında screenshot gibi büyük görsel varsa:
+   onu düzgün kart gibi gösterelim (opsiyonel) */
+.how-img,
+.how-image,
+.how-screenshot{
+  width: 100% !important;
+  max-height: 320px !important;
+  object-fit: contain !important;
+  display:block !important;
+  border-radius: 16px;
+  border: 1px solid rgba(15,23,42,.08);
+  background:#fff;
+  padding: 10px;
+}
+
+/* Mobilde biraz daha kısa */
+@media (max-width:700px){
+  .timeline img,
+  .step img,
+  .step .icon img{
+    max-height: 38px !important;
+  }
+  .how-img,
+  .how-image,
+  .how-screenshot{
+    max-height: 240px !important;
+  }
+}
