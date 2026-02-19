@@ -840,4 +840,41 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
 .container{
   padding-bottom: 96px !important;
 }
+/* ===== PATCH v2003: sticky CTA + how icons ===== */
+
+/* Sticky CTA: gerçekten fixed ve kayarak gelsin */
+.sticky-cta{
+  position: fixed !important;
+  left: 50% !important;
+  bottom: 16px !important;
+  transform: translateX(-50%) translateY(120%) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+
+  width: calc(100% - 24px) !important;
+  max-width: 980px !important;
+  z-index: 99999 !important;
+
+  transition: transform .25s ease, opacity .25s ease !important;
+}
+.sticky-cta.is-visible{
+  transform: translateX(-50%) translateY(0) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Container altına çakışmayı önle */
+.container{ padding-bottom: 110px !important; }
+
+/* “Nasıl çalışır” ikonları kocaman olmasın */
+.step .icon{
+  width: 38px !important;
+  height: 38px !important;
+  flex: 0 0 38px !important;
+}
+.step .icon svg{
+  width: 20px !important;
+  height: 20px !important;
+  display: block !important;
+}
 
