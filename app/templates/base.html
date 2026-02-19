@@ -172,6 +172,23 @@
 })();
 </script>
   <!-- ✅ Homepage slider script (safe on other pages too) -->
+  <script>
+  // Sticky CTA: scroll'da kayarak gelsin
+  (function(){
+    const cta = document.querySelector('.sticky-cta');
+    if(!cta) return;
+
+    function update(){
+      // 120px aşağı scroll olunca göster
+      const show = (window.scrollY || document.documentElement.scrollTop || 0) > 120;
+      cta.classList.toggle('is-visible', show);
+    }
+
+    update();
+    window.addEventListener('scroll', update, { passive:true });
+    window.addEventListener('resize', update);
+  })();
+</script>
   <script src="/static/slider.js?v=2"></script>
 </body>
 </html>

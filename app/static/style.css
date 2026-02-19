@@ -671,3 +671,71 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     padding:8px 10px;
   }
 }
+/* =========================================================
+   PATCH v2002.2 — page images + sticky cta animation
+   (dosyanın EN SONUNA ekle)
+   ========================================================= */
+
+/* Why-cash / about sayfalarında resimler taşmasın */
+.page-hero,
+.page-hero-img{
+  max-width: 980px;
+  margin: 14px auto 18px auto;
+  padding: 0 0;
+}
+
+.page-hero img,
+.page-hero-img img{
+  width: 100%;
+  height: auto !important;      /* ✅ kocaman sabit yükseklik yok */
+  max-height: 360px;            /* ✅ masaüstü limit */
+  object-fit: cover;
+  border-radius: 18px;
+  display:block;
+}
+
+@media (max-width:700px){
+  .page-hero img,
+  .page-hero-img img{
+    max-height: 240px;          /* ✅ mobil limit */
+    object-fit: contain;        /* yazı/görsel kırpılmasın */
+    background:#fff;
+  }
+}
+
+/* About logo: güvenli boyut */
+.about-logo img,
+.about-logo-wrap img{
+  width: 100%;
+  max-width: 220px !important;
+  height: auto !important;
+  display:block;
+  margin: 0 auto;
+}
+
+/* ===== Sticky CTA: kayarak gelsin (gizli -> visible) ===== */
+.sticky-cta{
+  position: fixed !important;
+  left: 50% !important;
+  bottom: 16px !important;
+  transform: translateX(-50%) translateY(120%) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+
+  width: calc(100% - 24px) !important;
+  max-width: 980px !important;
+
+  z-index: 99999 !important;
+  transition: transform .25s ease, opacity .25s ease !important;
+}
+
+.sticky-cta.is-visible{
+  transform: translateX(-50%) translateY(0) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Altta CTA çakışmasın */
+.container{
+  padding-bottom: 110px !important;
+}

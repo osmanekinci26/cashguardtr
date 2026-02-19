@@ -69,9 +69,6 @@
             <input type="number" name="payable_days" min="0" required>
           </div>
 
-          <!-- ✅ Eski oran soruları kaldırıldı: fx_debt_ratio / fx_revenue_ratio -->
-          <!-- ✅ Yeni: yıllık bazda TL karşılığı tutarlarla soruyoruz (test kendi oranlayacak) -->
-
           <div class="field">
             <label>3) Yıllık döviz borcu (TL karşılığı)</label>
             <input
@@ -80,7 +77,7 @@
               class="money"
               inputmode="numeric"
               autocomplete="off"
-              placeholder="Örn: 12.500.000,00"
+              placeholder="Örn: 12.500.000"
               required
             >
             <div class="small">Not: USD/EUR fark etmez; toplam döviz borcunun TL karşılığını girin.</div>
@@ -94,7 +91,7 @@
               class="money"
               inputmode="numeric"
               autocomplete="off"
-              placeholder="Örn: 8.000.000,00"
+              placeholder="Örn: 8.000.000"
               required
             >
             <div class="small">Not: Finansal borçların yıllık bazda toplam TL tutarı.</div>
@@ -108,7 +105,7 @@
               class="money"
               inputmode="numeric"
               autocomplete="off"
-              placeholder="Örn: 22.000.000,00"
+              placeholder="Örn: 22.000.000"
               required
             >
             <div class="small">Not: İhracat/FX fatura vb. yıllık döviz gelirinin TL karşılığını girin.</div>
@@ -122,7 +119,7 @@
               class="money"
               inputmode="numeric"
               autocomplete="off"
-              placeholder="Örn: 35.000.000,00"
+              placeholder="Örn: 35.000.000"
               required
             >
             <div class="small">Not: Yurtiçi TL fatura vb. yıllık TL gelirinin toplamı.</div>
@@ -132,7 +129,6 @@
             <div class="label-row">
               <label>7) Nakit tamponu (ay)</label>
 
-              <!-- Tooltip: hover (desktop) + tap (mobile) -->
               <span class="info" role="button" tabindex="0" aria-label="Formül bilgisi">
                 i
                 <span class="tip">
@@ -151,7 +147,6 @@
             <input type="number" name="cash_buffer_months" min="0" required>
           </div>
 
-          <!-- ✅ Top 1 yerine Top 3 -->
           <div class="field">
             <label>8) En büyük 3 müşteri toplam payı (%)</label>
             <input type="number" name="top3_customer_share" min="0" max="100" required>
@@ -306,46 +301,55 @@
       });
     })();
 
-    // ✅ TR money formatting: 100000000 -> 100.000.000,00
-    (function(){
-      function formatTRNumberFromDigits(digits){
-        if(!digits) return "";
-        digits = digits.replace(/^0+(?=\d)/, "");
-        const n = Number(digits);
-        if(!isFinite(n)) return "";
-        return n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    // ✅ TR money formatting: 100000000 -> 100.000.000 (NO decimals) + backspace friendly
+    (function () {
+      const moneyInputs = document.querySelectorAll('input.money');
+
+      function onlyDigits(s) { return (s || '').replace(/\D+/g, ''); }
+
+      function formatTrInt(digits) {
+        if (!digits) return '';
+        digits = digits.replace(/^0+(?=\d)/, '');
+        return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
       }
 
-      function attachMoneyMask(){
-        const inputs = document.querySelectorAll('input.money');
-        if(!inputs.length) return;
+      // caret'i "kaç digit yazmıştı" mantığıyla koru
+      function keepCaret(el, prevDigitsLen) {
+        const v = el.value;
+        let digitCount = 0;
+        let i = 0;
+        for (; i < v.length; i++) {
+          if (/\d/.test(v[i])) digitCount++;
+          if (digitCount >= prevDigitsLen) break;
+        }
+        const pos = Math.min(i + 1, v.length);
+        el.setSelectionRange(pos, pos);
+      }
 
-        inputs.forEach((inp) => {
-          if(inp.value){
-            const digits = inp.value.replace(/\D/g,'');
-            inp.value = formatTRNumberFromDigits(digits);
-          }
-
-          inp.addEventListener('input', () => {
-            const digits = inp.value.replace(/\D/g,'');
-            inp.value = formatTRNumberFromDigits(digits);
-          });
+      moneyInputs.forEach((el) => {
+        // Silme işlemlerine karışma; sadece rakam dışını engelle
+        el.addEventListener('beforeinput', (e) => {
+          if (e.inputType && e.inputType.startsWith('delete')) return;
+          if (e.data && /\D/.test(e.data)) e.preventDefault();
         });
 
-        const form = document.getElementById('riskForm');
-        if(form){
-          form.addEventListener('submit', () => {
-            form.querySelectorAll('input.money').forEach((x) => {
-              x.value = x.value.replace(/\D/g,''); // backend'e sadece rakam
-            });
-          });
-        }
-      }
+        el.addEventListener('input', () => {
+          const start = el.selectionStart || 0;
+          const prevDigitsLen = onlyDigits(el.value.slice(0, start)).length;
 
-      if(document.readyState === 'loading'){
-        document.addEventListener('DOMContentLoaded', attachMoneyMask);
-      } else {
-        attachMoneyMask();
+          const digits = onlyDigits(el.value);
+          el.value = formatTrInt(digits);
+
+          try { keepCaret(el, prevDigitsLen); } catch {}
+        });
+      });
+
+      // Submit olurken noktaları kaldır (backend'e düz sayı gitsin)
+      const form = document.getElementById('riskForm');
+      if (form) {
+        form.addEventListener('submit', () => {
+          moneyInputs.forEach((el) => { el.value = onlyDigits(el.value); });
+        });
       }
     })();
   </script>
