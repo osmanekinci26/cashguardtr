@@ -784,3 +784,60 @@ hr{border:none;border-top:1px solid var(--border);margin:14px 0}
     max-height: 240px !important;
   }
 }
+/* =========================================================
+   PATCH v2002.4 — Timeline SVG icon fix + Sticky CTA fix
+   (style.css EN SON)
+   ========================================================= */
+
+/* ---------- 1) "Nasıl çalışır" (timeline) ikonları: SVG kocaman olmasın ---------- */
+.timeline .icon,
+.step .icon{
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  min-height: 40px !important;
+  flex: 0 0 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.timeline .icon svg,
+.step .icon svg{
+  width: 20px !important;
+  height: 20px !important;
+  max-width: 20px !important;
+  max-height: 20px !important;
+  display: block !important;
+}
+
+/* Bazı global svg/img kuralları şişiriyorsa, step içindeki svg'leri de sabitle */
+.step svg{
+  width: 20px !important;
+  height: 20px !important;
+  max-width: 20px !important;
+  max-height: 20px !important;
+}
+
+/* ---------- 2) Sticky CTA: gerçek "kayan" (scroll’da ekranda kalan) ---------- */
+/* Eski is-visible / transform gizleme patch’lerini ez */
+.sticky-cta{
+  position: fixed !important;
+  left: 50% !important;
+  bottom: 16px !important;
+  transform: translateX(-50%) !important;
+
+  opacity: 1 !important;
+  pointer-events: auto !important;
+
+  width: calc(100% - 24px) !important;
+  max-width: 980px !important;
+
+  z-index: 99999 !important;
+}
+
+/* Buton sayfayı kapatmasın diye container altına boşluk */
+.container{
+  padding-bottom: 96px !important;
+}
+
