@@ -99,22 +99,78 @@
 
   <!-- ✅ Sticky CTA: scroll ile görünür (site genelinde güvenli) -->
   <script>
-    (() => {
-      const cta = document.querySelector(".sticky-cta");
-      if (!cta) return;
+  (function(){
+    function initStickyCTA(){
+      const cta = document.querySelector('.sticky-cta');
+      if(!cta) return;
 
-      const showAfter = 260; // px
+      function onScroll(){
+        const y = window.scrollY || document.documentElement.scrollTop || 0;
+        cta.classList.toggle('is-visible', y > 180);
+      }
 
-      const onScroll = () => {
-        if (window.scrollY > showAfter) cta.classList.add("is-visible");
-        else cta.classList.remove("is-visible");
-      };
-
-      window.addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('load', onScroll);
       onScroll();
-    })();
-  </script>
+    }
 
+    // DOM hazır olunca
+    if (document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', initStickyCTA);
+    } else {
+      initStickyCTA();
+    }
+  })();
+</script>
+<script>
+(function(){
+  function formatTRNumberFromDigits(digits){
+    // digits: "100000000" -> "100.000.000,00"
+    if(!digits) return "";
+    // leading zeros temizle
+    digits = digits.replace(/^0+(?=\d)/, "");
+    const n = Number(digits);
+    if(!isFinite(n)) return "";
+    return n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function attachMoneyMask(){
+    const inputs = document.querySelectorAll('input.money');
+    if(!inputs.length) return;
+
+    inputs.forEach((inp) => {
+      // başlangıçta temizle/formatla
+      if(inp.value){
+        const digits = inp.value.replace(/\D/g,'');
+        inp.value = formatTRNumberFromDigits(digits);
+      }
+
+      inp.addEventListener('input', () => {
+        const digits = inp.value.replace(/\D/g,'');  // sadece rakamlar
+        inp.value = formatTRNumberFromDigits(digits);
+      });
+
+      // submit olunca backend'e rakam gönder (100000000)
+      const form = inp.form;
+      if(form && !form.dataset.moneyBound){
+        form.dataset.moneyBound = "1";
+        form.addEventListener('submit', () => {
+          form.querySelectorAll('input.money').forEach((x) => {
+            // form gönderirken nokta/virgül temizle
+            x.value = x.value.replace(/\D/g,'');
+          });
+        });
+      }
+    });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', attachMoneyMask);
+  } else {
+    attachMoneyMask();
+  }
+})();
+</script>
   <!-- ✅ Homepage slider script (safe on other pages too) -->
   <script src="/static/slider.js?v=2"></script>
 </body>
